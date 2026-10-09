@@ -14,7 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agent_runs: {
+        Row: {
+          created_at: string
+          id: string
+          model: string
+          prompt: string
+          response: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          model: string
+          prompt: string
+          response: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          model?: string
+          prompt?: string
+          response?: string
+        }
+        Relationships: []
+      }
+      events: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          level: string
+          message: string
+          meta: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          level?: string
+          message: string
+          meta?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          level?: string
+          message?: string
+          meta?: Json
+        }
+        Relationships: []
+      }
+      scans: {
+        Row: {
+          created_at: string
+          duration_ms: number
+          findings: number
+          host: Json
+          id: string
+          items_scanned: number
+          report: string | null
+          scan_type: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number
+          findings?: number
+          host?: Json
+          id?: string
+          items_scanned?: number
+          report?: string | null
+          scan_type: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number
+          findings?: number
+          host?: Json
+          id?: string
+          items_scanned?: number
+          report?: string | null
+          scan_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      threats: {
+        Row: {
+          ai_verdict: string | null
+          created_at: string
+          detections: Json
+          entropy: number | null
+          free_energy: number | null
+          id: string
+          name: string
+          payload_preview: string | null
+          severity: string
+          sha256: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          ai_verdict?: string | null
+          created_at?: string
+          detections?: Json
+          entropy?: number | null
+          free_energy?: number | null
+          id?: string
+          name: string
+          payload_preview?: string | null
+          severity?: string
+          sha256?: string | null
+          source: string
+          status?: string
+        }
+        Update: {
+          ai_verdict?: string | null
+          created_at?: string
+          detections?: Json
+          entropy?: number | null
+          free_energy?: number | null
+          id?: string
+          name?: string
+          payload_preview?: string | null
+          severity?: string
+          sha256?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
