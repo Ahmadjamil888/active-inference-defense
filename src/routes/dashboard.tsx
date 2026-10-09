@@ -12,7 +12,7 @@ type Tab = (typeof TABS)[number];
 
 export const Route = createFileRoute("/dashboard")({
   validateSearch: (s: Record<string, unknown>): { tab: Tab } => ({
-    tab: TABS.includes(s.tab as Tab) ? (s.tab as Tab) : "overview",
+    tab: TABS.includes(s["tab"] as Tab) ? (s["tab"] as Tab) : "overview",
   }),
   head: () => ({
     meta: [
@@ -237,7 +237,7 @@ function Empty({ text }: { text: string }) {
   return <p className="py-8 text-center text-sm text-muted-foreground">{text}</p>;
 }
 
-function VmScreen({ host, events }: { host: Record<string, unknown> | undefined; events: Ev[] }) {
+function VmScreen({ host, events }: { host: { benchMs: number; runtime: string; region: string; ray: string | null } | undefined; events: Ev[] }) {
   return (
     <>
       <div className="mb-3 flex items-center justify-between">

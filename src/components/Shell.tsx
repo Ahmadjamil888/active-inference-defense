@@ -33,7 +33,7 @@ export function Header({ active }: { active: string }) {
           <Link
             key={l.label}
             to={l.to}
-            search={l.tab ? { tab: l.tab } : undefined}
+            {...(l.tab ? { search: { tab: l.tab } } : {})}
             className={`nav-link ${active === l.label ? "active" : ""}`}
           >
             {l.label}

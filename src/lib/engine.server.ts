@@ -85,10 +85,10 @@ export async function sha256(str: string) {
 // hidden states {benign, malicious}. Prior belief: 2% of files malicious.
 const PRIOR_MAL = 0.02;
 const MODEL = {
-  benign: { entropy: [4.6, 1.0], score: [0.05, 0.15] },
-  malicious: { entropy: [6.4, 1.3], score: [0.9, 0.45] },
+  benign: { entropy: [4.6, 1.0] as [number, number], score: [0.05, 0.15] as [number, number] },
+  malicious: { entropy: [6.4, 1.3] as [number, number], score: [0.9, 0.45] as [number, number] },
 };
-const lnN = (x: number, [m, s]: number[]) => -0.5 * Math.log(2 * Math.PI * s * s) - ((x - m) ** 2) / (2 * s * s);
+const lnN = (x: number, [m, s]: [number, number]) => -0.5 * Math.log(2 * Math.PI * s * s) - ((x - m) ** 2) / (2 * s * s);
 
 export async function analyze(s: Sample): Promise<Analysis> {
   const detections: Detection[] = [];
@@ -117,7 +117,7 @@ export async function analyze(s: Sample): Promise<Analysis> {
     monitor: pMal * 4 + 0.6 + ambiguity * 0.5,
     quarantine: (1 - pMal) * 3 + 0.2,
   };
-  const action = (Object.entries(efe).sort((a, b) => a[1] - b[1])[0][0]) as Analysis["action"];
+  const action = (Object.entries(efe).sort((a, b) => a[1] - b[1])[0]![0]) as Analysis["action"];
   const severity = pMal > 0.97 ? "critical" : pMal > 0.8 ? "high" : pMal > 0.4 ? "medium" : "low";
 
   return {
