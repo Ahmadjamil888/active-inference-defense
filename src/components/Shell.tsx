@@ -34,7 +34,7 @@ export function Header({ active }: { active: string }) {
             key={l.label}
             to={l.to}
             {...(l.tab ? { search: { tab: l.tab } } : {})}
-            className={`nav-link ${active === l.label ? "active" : ""}`}
+            className={`nav-link ${active === l.label ? "is-active" : ""}`}
           >
             {l.label}
           </Link>
