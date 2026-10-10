@@ -370,5 +370,7 @@ function Docs() {
         </div>
       </div>
     </div>
+    </div>
   );
 }
+
