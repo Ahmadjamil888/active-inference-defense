@@ -223,9 +223,11 @@ a:focus-visible { outline: calc(2 * var(--u)) solid #2f5f9e; outline-offset: cal
   color: var(--ink);
   background: rgba(255, 255, 255, 0.8);
   padding: calc(16 * var(--u));
+  padding-right: calc(80 * var(--u));
   border-radius: calc(4 * var(--u));
   overflow-x: auto;
   margin: calc(12 * var(--u)) 0;
+  position: relative;
 }
 
 .install-label {
@@ -245,8 +247,10 @@ a:focus-visible { outline: calc(2 * var(--u)) solid #2f5f9e; outline-offset: cal
   padding: calc(8 * var(--u)) calc(16 * var(--u));
   font-family: Inter, sans-serif;
   font-size: calc(14 * var(--u));
+  font-weight: 500;
   cursor: pointer;
   border-radius: calc(4 * var(--u));
+  z-index: 10;
 }
 
 .features-grid {

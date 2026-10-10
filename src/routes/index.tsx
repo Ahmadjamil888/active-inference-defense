@@ -156,8 +156,9 @@ function Index() {
         <div className="install-block">
           <div className="install-label">Install the CLI globally</div>
           <div className="install-command">
-            cd active-inference-defense/agent && npm install -g .
-            <button className="copy-btn" onClick={() => navigator.clipboard.writeText('cd active-inference-defense/agent && npm install -g .')}>Copy</button>
+            cd active-inference-defense/agent
+            npm install -g .
+            <button className="copy-btn" onClick={() => navigator.clipboard.writeText('cd active-inference-defense/agent\nnpm install -g .')}>Copy</button>
           </div>
         </div>
         <div className="install-block">
