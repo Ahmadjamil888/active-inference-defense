@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { Header, VideoBg } from "@/components/Shell";
 import { supabase } from "@/integrations/supabase/client";
 import { getHost, injectUsb, runScan, agentChat, monitorTick, releaseThreat } from "@/lib/aiss.functions";
@@ -146,17 +147,27 @@ function Dashboard() {
           </div>
         </div>
 
-        <nav className="flex flex-wrap gap-2">
+        <div className="grid gap-6 lg:grid-cols-[220px_1fr]">
+        <aside className="glass h-fit p-3 lg:sticky lg:top-4">
+          <nav className="flex gap-1 overflow-auto lg:flex-col">
           {TABS.map((t) => (
             <button
               key={t}
               onClick={() => navigate({ search: { tab: t } })}
-              className={`rounded-full border px-4 py-2 text-sm capitalize transition-colors ${tab === t ? "border-transparent bg-primary text-primary-foreground" : "border-border text-secondary-foreground hover:bg-accent"}`}
+              className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm capitalize transition-colors ${tab === t ? "bg-primary text-primary-foreground" : "text-secondary-foreground hover:bg-accent"}`}
             >
-              {t}
+              <i className={`fa-solid ${ICONS[t]} w-4`} /> {t}
             </button>
           ))}
-        </nav>
+          </nav>
+          <div className="mt-4 hidden border-t border-border/40 px-4 pt-4 text-xs text-muted-foreground lg:block">
+            <p><span className="mr-2 inline-block size-2 rounded-full bg-[var(--success)]" />Agents live</p>
+            <p className="mt-1">Heartbeat every 45s</p>
+          </div>
+        </aside>
+        <div className="flex min-w-0 flex-col gap-6">
+
+        {tab === "overview" && <LiveCharts threats={threats.data ?? []} events={events.data ?? []} scans={scans.data ?? []} />}
 
         {tab === "overview" && (
           <section className="grid gap-5 lg:grid-cols-3">
@@ -219,8 +230,77 @@ function Dashboard() {
             {!events.data?.length && <Empty text="Event stream empty." />}
           </section>
         )}
+        </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+const ICONS: Record<Tab, string> = { overview: "fa-gauge-high", threats: "fa-biohazard", scans: "fa-magnifying-glass", agent: "fa-robot", events: "fa-list-ul" };
+
+function LiveCharts({ threats, events, scans }: { threats: Threat[]; events: Ev[]; scans: Scan[] }) {
+  // bucket events + threats per minute over the last 30 minutes (real DB rows)
+  const now = Date.now();
+  const buckets = Array.from({ length: 30 }, (_, i) => {
+    const start = now - (30 - i) * 60000;
+    const inB = (t: string) => { const x = new Date(t).getTime(); return x >= start && x < start + 60000; };
+    return {
+      t: new Date(start).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false }),
+      events: events.filter((e) => inB(e.created_at)).length,
+      threats: threats.filter((e) => inB(e.created_at)).length,
+    };
+  });
+  const sev = ["critical", "high", "medium", "low"].map((s) => ({ name: s, value: threats.filter((t) => t.severity === s).length }));
+  const scanBars = [...scans].reverse().slice(-12).map((s) => ({ t: fmt(s.created_at), findings: s.findings, items: s.items_scanned }));
+  const colors = ["var(--destructive)", "var(--warning)", "var(--primary)", "var(--success)"];
+  const tip = { contentStyle: { background: "var(--card)", border: "1px solid var(--border)", borderRadius: 12, fontSize: 12 } };
+  return (
+    <section className="grid gap-5 lg:grid-cols-3">
+      <div className="glass p-5 lg:col-span-2">
+        <h3 className="mb-3 text-sm font-semibold">Live activity · last 30 min</h3>
+        <div className="h-56">
+          <ResponsiveContainer>
+            <AreaChart data={buckets}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="t" fontSize={10} stroke="var(--muted-foreground)" />
+              <YAxis allowDecimals={false} fontSize={10} stroke="var(--muted-foreground)" />
+              <Tooltip {...tip} />
+              <Area type="monotone" dataKey="events" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.2} />
+              <Area type="monotone" dataKey="threats" stroke="var(--destructive)" fill="var(--destructive)" fillOpacity={0.3} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="glass p-5">
+        <h3 className="mb-3 text-sm font-semibold">Threat severity</h3>
+        <div className="h-56">
+          <ResponsiveContainer>
+            <PieChart>
+              <Pie data={sev} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={3}>
+                {sev.map((_, i) => <Cell key={i} fill={colors[i]} />)}
+              </Pie>
+              <Tooltip {...tip} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="glass p-5 lg:col-span-3">
+        <h3 className="mb-3 text-sm font-semibold">Scan findings</h3>
+        <div className="h-44">
+          <ResponsiveContainer>
+            <BarChart data={scanBars}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+              <XAxis dataKey="t" fontSize={10} stroke="var(--muted-foreground)" />
+              <YAxis allowDecimals={false} fontSize={10} stroke="var(--muted-foreground)" />
+              <Tooltip {...tip} />
+              <Bar dataKey="findings" fill="var(--destructive)" radius={[6, 6, 0, 0]} />
+              <Bar dataKey="items" fill="var(--primary)" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </section>
   );
 }
 
