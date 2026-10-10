@@ -1,0 +1,1437 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AISS — Local Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #0d0d0f;
+  --bg2: #13131a;
+  --bg3: #1a1a24;
+  --border: rgba(255,255,255,0.08);
+  --accent: #00d4aa;
+  --accent2: #0099ff;
+  --text: #e8e8f0;
+  --text2: #8888a0;
+  --red: #ff4444;
+  --amber: #ffaa00;
+  --green: #00cc88;
+  --radius: 12px;
+  --sidebar: 240px;
+  --font: 'Inter', system-ui, sans-serif;
+}
+[data-theme="light"] {
+  --bg: #f4f4f8;
+  --bg2: #ffffff;
+  --bg3: #eaeaf0;
+  --border: rgba(0,0,0,0.1);
+  --text: #111120;
+  --text2: #666680;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit;color:inherit}
+input{font-family:inherit;font-size:inherit}
+
+/* Layout */
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:var(--sidebar);background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;transition:width .25s}
+#sidebar.collapsed{width:56px}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{height:56px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;padding:0 20px;flex-shrink:0}
+#content{flex:1;overflow-y:auto;padding:24px;background:var(--bg)}
+
+/* Sidebar */
+.sb-logo{height:56px;display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-wordmark{font-size:17px;font-weight:700;letter-spacing:-.03em;white-space:nowrap;overflow:hidden;color:var(--text)}
+.sb-wordmark span{color:var(--accent)}
+.sb-nav{flex:1;overflow-y:auto;padding:8px 0}
+.nav-item{display:flex;align-items:center;gap:12px;padding:10px 16px;cursor:pointer;transition:background .15s;white-space:nowrap;overflow:hidden;border-radius:0;position:relative}
+.nav-item:hover{background:var(--bg3)}
+.nav-item.active{background:rgba(0,212,170,0.1);color:var(--accent)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:6px;bottom:6px;width:3px;background:var(--accent);border-radius:0 3px 3px 0}
+.nav-icon{width:18px;text-align:center;flex-shrink:0;font-size:15px}
+.nav-label{font-size:13.5px;font-weight:500;overflow:hidden;transition:opacity .2s,width .2s}
+#sidebar.collapsed .nav-label{opacity:0;width:0}
+#sidebar.collapsed .sb-wordmark .wm-text{display:none}
+.sb-divider{height:1px;background:var(--border);margin:8px 16px}
+.sb-profile{padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;overflow:hidden}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);display:grid;place-items:center;font-size:13px;font-weight:700;color:#000;flex-shrink:0}
+.sb-uinfo{overflow:hidden}
+.sb-uname{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-urole{font-size:11px;color:var(--text2)}
+#sidebar.collapsed .sb-uinfo,.collapsed .sb-profile .sb-uinfo{display:none}
+
+/* Topbar */
+#topbar-title{font-size:16px;font-weight:600;flex:1}
+#searchbox{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:7px 14px;border-radius:8px;width:220px;outline:none;transition:border .2s}
+#searchbox:focus{border-color:var(--accent)}
+.tb-btn{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;transition:background .15s;position:relative;flex-shrink:0}
+.tb-btn:hover{background:var(--bg3)}
+.badge{position:absolute;top:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--red);border:2px solid var(--bg2)}
+#theme-btn{font-size:16px}
+#collapse-btn{font-size:14px}
+#notif-btn{font-size:16px}
+
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);transition:box-shadow .2s,transform .2s}
+.card:hover{box-shadow:0 4px 20px rgba(0,0,0,.3);transform:translateY(-1px)}
+.card-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.kpi{padding:20px}
+.kpi-label{font-size:12px;color:var(--text2);margin-bottom:4px}
+.kpi-value{font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1}
+.kpi-trend{font-size:12px;margin-top:6px}
+.trend-up{color:var(--red)}
+.trend-dn{color:var(--green)}
+.kpi.score .kpi-value{color:var(--accent)}
+.kpi.threats .kpi-value{color:var(--red)}
+.kpi.alerts .kpi-value{color:var(--amber)}
+.kpi.assets .kpi-value{color:var(--accent2)}
+
+/* Grid layouts */
+.grid-2-1{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:24px}
+.grid-7-5{display:grid;grid-template-columns:7fr 5fr;gap:16px;margin-bottom:24px}
+.p20{padding:20px}
+
+/* Status dots */
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;flex-shrink:0}
+.dot-red{background:var(--red)}
+.dot-amber{background:var(--amber)}
+.dot-green{background:var(--green)}
+.dot-blue{background:var(--accent2)}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{color:var(--text2);font-weight:600;text-align:left;padding:8px 12px;border-bottom:1px solid var(--border)}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--border)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--bg3)}
+.tbl .ts{color:var(--text2);font-size:11px;font-variant-numeric:tabular-nums}
+.sev-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;text-transform:uppercase}
+.sev-critical{background:rgba(255,68,68,.15);color:var(--red)}
+.sev-high{background:rgba(255,120,0,.15);color:#ff7700}
+.sev-medium{background:rgba(255,170,0,.15);color:var(--amber)}
+.sev-low{background:rgba(0,204,136,.15);color:var(--green)}
+
+/* Progress bars */
+.prog-wrap{margin-bottom:14px}
+.prog-row{display:flex;justify-content:space-between;margin-bottom:4px;font-size:13px}
+.prog-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .6s ease}
+
+/* Terminal/log */
+.logbox{background:#090910;border:1px solid var(--border);border-radius:8px;padding:14px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:11.5px;line-height:1.7;max-height:320px;overflow-y:auto}
+.log-info{color:#88aaff}
+.log-warn{color:var(--amber)}
+.log-error,.log-critical{color:var(--red)}
+.log-ok{color:var(--green)}
+.log-ts{color:var(--text2)}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab-btn{padding:10px 18px;font-size:13.5px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;transition:color .15s,border-color .15s;margin-bottom:-1px}
+.tab-btn:hover{color:var(--text)}
+.tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+
+/* Buttons */
+.btn{padding:8px 16px;border-radius:8px;font-weight:500;font-size:13px;transition:all .15s;display:inline-flex;align-items:center;gap:6px}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-ghost{border:1px solid var(--border);color:var(--text2)}
+.btn-ghost:hover{background:var(--bg3);color:var(--text)}
+.btn-danger{background:rgba(255,68,68,.15);color:var(--red);border:1px solid rgba(255,68,68,.3)}
+.btn-danger:hover{background:rgba(255,68,68,.25)}
+.btn-approve{background:rgba(0,204,136,.15);color:var(--green);border:1px solid rgba(0,204,136,.3)}
+.btn-approve:hover{background:rgba(0,204,136,.25)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn:disabled{opacity:.4;cursor:default;filter:none}
+
+/* Notification panel */
+#notif-panel{position:fixed;top:56px;right:8px;width:320px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;z-index:100;box-shadow:0 8px 30px rgba(0,0,0,.4);display:none;max-height:400px;overflow-y:auto}
+#notif-panel.open{display:block}
+.notif-item{padding:10px 12px;border-radius:8px;margin-bottom:6px;font-size:13px;border-left:3px solid}
+.notif-item.critical{background:rgba(255,68,68,.08);border-color:var(--red)}
+.notif-item.warn{background:rgba(255,170,0,.08);border-color:var(--amber)}
+.notif-item.info{background:rgba(0,212,170,.08);border-color:var(--accent)}
+.notif-time{font-size:11px;color:var(--text2);margin-top:3px}
+
+/* Approval modal */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;place-items:center}
+#modal-overlay.open{display:grid}
+#modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:28px;max-width:480px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#modal h3{font-size:16px;font-weight:700;margin-bottom:8px}
+#modal p{color:var(--text2);font-size:13.5px;line-height:1.6;margin-bottom:16px}
+#modal .modal-detail{background:var(--bg3);border-radius:8px;padding:12px;font-family:monospace;font-size:12px;margin-bottom:20px;white-space:pre-wrap;word-break:break-all;max-height:180px;overflow-y:auto}
+#modal .modal-btns{display:flex;gap:10px;justify-content:flex-end}
+
+/* Health indicators */
+.health-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.health-row:last-child{border-bottom:none}
+.health-name{flex:1;font-size:13.5px}
+.health-status{font-size:12px;font-weight:600;padding:3px 10px;border-radius:4px}
+.hs-ok{background:rgba(0,204,136,.15);color:var(--green)}
+.hs-warn{background:rgba(255,170,0,.15);color:var(--amber)}
+.hs-err{background:rgba(255,68,68,.15);color:var(--red)}
+.hs-restart{font-size:11px;color:var(--accent);cursor:pointer;text-decoration:underline}
+
+/* Connection rows */
+.conn-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px;font-family:monospace}
+.conn-row:last-child{border-bottom:none}
+.conn-local{color:var(--text2);flex-shrink:0;width:90px}
+.conn-arrow{color:var(--text2)}
+.conn-remote{flex:1;word-break:break-all}
+.conn-pid{color:var(--text2);font-size:11px}
+
+/* Settings */
+.setting-row{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-info{flex:1}
+.setting-label{font-size:14px;font-weight:500}
+.setting-desc{font-size:12px;color:var(--text2);margin-top:2px}
+.toggle{width:44px;height:24px;background:var(--bg3);border-radius:12px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:1px solid var(--border)}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle.on::after{transform:translateX(20px)}
+.thresh-input{width:80px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;color:var(--text);text-align:center}
+.thresh-input:focus{outline:none;border-color:var(--accent)}
+
+/* Incident timeline */
+.timeline{position:relative;padding-left:28px}
+.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-step{position:relative;margin-bottom:20px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--bg3);border:2px solid var(--border)}
+.tl-dot.done{background:var(--green);border-color:var(--green)}
+.tl-dot.active{background:var(--amber);border-color:var(--amber);box-shadow:0 0 0 4px rgba(255,170,0,.15)}
+.tl-dot.pending{background:var(--bg3)}
+.tl-title{font-size:13.5px;font-weight:600}
+.tl-desc{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.5}
+
+/* Charts */
+.chart-wrap{position:relative;height:200px}
+.chart-wrap-tall{position:relative;height:240px}
+
+/* Empty state */
+.empty{text-align:center;padding:48px 20px;color:var(--text2)}
+.empty-icon{font-size:32px;margin-bottom:12px;opacity:.4}
+.empty-text{font-size:14px}
+
+/* Skeleton */
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skel{background:linear-gradient(90deg,var(--bg3) 25%,var(--bg2) 50%,var(--bg3) 75%);background-size:400px 100%;animation:shimmer 1.5s infinite;border-radius:6px;height:16px}
+
+/* Toast */
+#toast-container{position:fixed;bottom:24px;right:24px;z-index:300;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:12px 18px;font-size:13.5px;box-shadow:0 4px 20px rgba(0,0,0,.4);transform:translateY(10px);opacity:0;transition:all .3s;max-width:320px}
+.toast.show{transform:none;opacity:1}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+.toast.info{border-left:3px solid var(--accent)}
+
+/* Responsive */
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .grid-2-1,.grid-7-5{grid-template-columns:1fr}
+  #sidebar{position:fixed;z-index:50;height:100%;transform:translateX(-100%);transition:transform .25s}
+  #sidebar.mobile-open{transform:none}
+  #overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:49;display:none}
+  #overlay.show{display:block}
+}
+@media(max-width:600px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  #content{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <div class="sb-logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="6" fill="#00d4aa"/>
+        <path d="M7 14l4 4 10-10" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="14" cy="14" r="12" stroke="#000" stroke-width="1.5" fill="none" opacity=".3"/>
+      </svg>
+      <span class="sb-wordmark"><span>AI</span><span class="wm-text">SS</span></span>
+    </div>
+    <div class="sb-nav" id="sb-nav">
+      <div class="nav-item active" data-page="overview">
+        <span class="nav-icon">⬡</span><span class="nav-label">Overview</span>
+      </div>
+      <div class="nav-item" data-page="threats">
+        <span class="nav-icon">⚠</span><span class="nav-label">Threats</span>
+      </div>
+      <div class="nav-item" data-page="alerts">
+        <span class="nav-icon">🔔</span><span class="nav-label">Alerts</span>
+      </div>
+      <div class="nav-item" data-page="network">
+        <span class="nav-icon">⇌</span><span class="nav-label">Network</span>
+      </div>
+      <div class="nav-item" data-page="vulnerabilities">
+        <span class="nav-icon">◈</span><span class="nav-label">Vulnerabilities</span>
+      </div>
+      <div class="nav-item" data-page="assets">
+        <span class="nav-icon">◉</span><span class="nav-label">Assets</span>
+      </div>
+      <div class="nav-item" data-page="incidents">
+        <span class="nav-icon">⚡</span><span class="nav-label">Incidents</span>
+      </div>
+      <div class="nav-item" data-page="reports">
+        <span class="nav-icon">📋</span><span class="nav-label">Reports</span>
+      </div>
+      <div class="sb-divider"></div>
+      <div class="nav-item" data-page="settings">
+        <span class="nav-icon">⚙</span><span class="nav-label">Settings</span>
+      </div>
+      <div class="nav-item" data-page="health">
+        <span class="nav-icon">♡</span><span class="nav-label">Health</span>
+      </div>
+    </div>
+    <div class="sb-profile">
+      <div class="sb-avatar" id="sb-initial">A</div>
+      <div class="sb-uinfo">
+        <div class="sb-uname" id="sb-uname">This Machine</div>
+        <div class="sb-urole">Local Agent</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main -->
+  <div id="main">
+    <!-- Topbar -->
+    <div id="topbar">
+      <button class="tb-btn" id="collapse-btn" title="Toggle sidebar" aria-label="Toggle sidebar">☰</button>
+      <div id="topbar-title">Overview</div>
+      <input id="searchbox" type="search" placeholder="Search events… (Ctrl+K)" autocomplete="off" />
+      <button class="tb-btn" id="notif-btn" title="Notifications" aria-label="Notifications">
+        🔔<span class="badge" id="notif-badge" style="display:none"></span>
+      </button>
+      <button class="tb-btn" id="theme-btn" title="Toggle theme" aria-label="Toggle theme">🌙</button>
+    </div>
+
+    <!-- Content -->
+    <div id="content">
+
+      <!-- ===== OVERVIEW ===== -->
+      <div class="tab-pane active" id="page-overview">
+        <div class="kpi-grid">
+          <div class="card kpi score">
+            <div class="kpi-label">Security Score</div>
+            <div class="kpi-value" id="kpi-score">—</div>
+            <div class="kpi-trend" id="kpi-score-trend"></div>
+          </div>
+          <div class="card kpi threats">
+            <div class="kpi-label">Active Threats</div>
+            <div class="kpi-value" id="kpi-threats">—</div>
+            <div class="kpi-trend" id="kpi-threats-trend"></div>
+          </div>
+          <div class="card kpi alerts">
+            <div class="kpi-label">Open Alerts</div>
+            <div class="kpi-value" id="kpi-alerts">—</div>
+            <div class="kpi-trend" id="kpi-alerts-trend"></div>
+          </div>
+          <div class="card kpi assets">
+            <div class="kpi-label">Monitored Assets</div>
+            <div class="kpi-value" id="kpi-assets">—</div>
+            <div class="kpi-trend"></div>
+          </div>
+        </div>
+
+        <div class="grid-2-1">
+          <div class="card p20">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+              <div class="card-title" style="margin-bottom:0">Threat Activity</div>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-ghost btn-sm range-btn active" data-range="24h">24h</button>
+                <button class="btn btn-ghost btn-sm range-btn" data-range="7d">7d</button>
+                <button class="btn btn-ghost btn-sm range-btn" data-range="30d">30d</button>
+              </div>
+            </div>
+            <div class="chart-wrap-tall"><canvas id="chart-activity"></canvas></div>
+          </div>
+          <div class="card p20">
+            <div class="card-title">Threats by Severity</div>
+            <div class="chart-wrap"><canvas id="chart-severity"></canvas></div>
+            <div id="sev-legend" style="margin-top:12px;display:flex;flex-direction:column;gap:6px;font-size:12.5px"></div>
+          </div>
+        </div>
+
+        <div class="grid-7-5">
+          <div class="card p20">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div class="card-title" style="margin-bottom:0">Recent Alerts</div>
+              <a href="#" onclick="showPage('alerts');return false" style="font-size:12px;color:var(--accent)">View all →</a>
+            </div>
+            <table class="tbl">
+              <thead><tr><th>Severity</th><th>Alert</th><th>Source</th><th>Time</th><th>Status</th></tr></thead>
+              <tbody id="tbl-alerts"></tbody>
+            </table>
+          </div>
+          <div class="card p20">
+            <div class="card-title">System Health</div>
+            <div id="health-bars"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== THREATS ===== -->
+      <div class="tab-pane" id="page-threats">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 style="font-size:16px;font-weight:600">Live Threat Feed</h2>
+          <div style="display:flex;gap:8px">
+            <select id="threat-filter-sev" class="thresh-input" style="width:120px">
+              <option value="">All severities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <select id="threat-filter-status" class="thresh-input" style="width:120px">
+              <option value="">All statuses</option>
+              <option value="contained">Contained</option>
+              <option value="quarantined">Quarantined</option>
+              <option value="flagged">Flagged</option>
+              <option value="released">Released</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadThreats()">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="threats-list"></div>
+      </div>
+
+      <!-- ===== ALERTS ===== -->
+      <div class="tab-pane" id="page-alerts">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 style="font-size:16px;font-weight:600">Alert Triage</h2>
+          <button class="btn btn-ghost btn-sm" onclick="loadAlerts()">↻ Refresh</button>
+        </div>
+        <div id="alerts-list"></div>
+      </div>
+
+      <!-- ===== NETWORK ===== -->
+      <div class="tab-pane" id="page-network">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Network Monitor</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div class="card p20">
+            <div class="card-title">Active Connections</div>
+            <div id="conn-list" class="logbox" style="max-height:260px;font-size:12px"></div>
+          </div>
+          <div class="card p20">
+            <div class="card-title">Listening Ports</div>
+            <div id="listen-list" class="logbox" style="max-height:260px;font-size:12px"></div>
+          </div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title" style="color:var(--red)">⚠ Exposed Services (0.0.0.0 / ::)</div>
+          <div id="exposed-list"></div>
+        </div>
+      </div>
+
+      <!-- ===== VULNERABILITIES ===== -->
+      <div class="tab-pane" id="page-vulnerabilities">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <h2 style="font-size:16px;font-weight:600">Local Exposure Scan</h2>
+          <button class="btn btn-primary btn-sm" onclick="triggerScan()">▶ Run Scan</button>
+        </div>
+        <div id="vuln-list"></div>
+      </div>
+
+      <!-- ===== ASSETS ===== -->
+      <div class="tab-pane" id="page-assets">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Monitored Assets</h2>
+        <div id="assets-list"></div>
+      </div>
+
+      <!-- ===== INCIDENTS ===== -->
+      <div class="tab-pane" id="page-incidents">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Incident Lifecycle</h2>
+        <div id="incidents-list"></div>
+      </div>
+
+      <!-- ===== REPORTS ===== -->
+      <div class="tab-pane" id="page-reports">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Reports</h2>
+        <div class="card p20" style="max-width:480px">
+          <div class="card-title">Export Data</div>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-top:8px">
+            <label style="font-size:13px;color:var(--text2)">Date range</label>
+            <div style="display:flex;gap:10px">
+              <input type="date" id="report-from" class="thresh-input" style="width:160px;font-size:13px">
+              <span style="align-self:center;color:var(--text2)">to</span>
+              <input type="date" id="report-to" class="thresh-input" style="width:160px;font-size:13px">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:8px">
+              <button class="btn btn-primary" onclick="exportReport('csv')">⬇ Export CSV</button>
+              <button class="btn btn-ghost" onclick="exportReport('json')">⬇ Export JSON</button>
+            </div>
+          </div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">Summary</div>
+          <div id="report-summary"></div>
+        </div>
+      </div>
+
+      <!-- ===== SETTINGS ===== -->
+      <div class="tab-pane" id="page-settings">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Settings</h2>
+        <div class="card p20" style="max-width:640px">
+          <div class="card-title">Enforcement Mode</div>
+          <div id="settings-enforcement"></div>
+        </div>
+        <div class="card p20" style="max-width:640px;margin-top:16px">
+          <div class="card-title">Gate Thresholds (risk score 0–100)</div>
+          <div id="settings-thresholds"></div>
+        </div>
+        <div class="card p20" style="max-width:640px;margin-top:16px">
+          <div class="card-title">Allowlist</div>
+          <div id="settings-allowlist"></div>
+        </div>
+        <div class="card p20" style="max-width:640px;margin-top:16px">
+          <div class="card-title">AI Reasoning</div>
+          <div id="settings-ai"></div>
+        </div>
+      </div>
+
+      <!-- ===== HEALTH ===== -->
+      <div class="tab-pane" id="page-health">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Service Health</h2>
+        <div class="card p20" style="max-width:560px">
+          <div id="health-detail"></div>
+        </div>
+        <div class="card p20" style="max-width:560px;margin-top:16px">
+          <div class="card-title">Live Log</div>
+          <div id="health-log" class="logbox"></div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- Overlay for mobile sidebar -->
+<div id="overlay" onclick="closeMobileSidebar()"></div>
+
+<!-- Notification panel -->
+<div id="notif-panel" role="dialog" aria-label="Notifications">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+    <strong style="font-size:13px">Notifications</strong>
+    <button style="font-size:12px;color:var(--accent)" onclick="clearNotifs()">Clear all</button>
+  </div>
+  <div id="notif-list"><div class="empty"><div class="empty-text">No notifications</div></div></div>
+</div>
+
+<!-- Approval modal -->
+<div id="modal-overlay" role="dialog" aria-modal="true">
+  <div id="modal">
+    <h3 id="modal-title">Approve Action</h3>
+    <p id="modal-desc"></p>
+    <div class="modal-detail" id="modal-detail"></div>
+    <div class="modal-btns">
+      <button class="btn btn-ghost" onclick="closeModal(false)">Deny</button>
+      <button class="btn btn-approve" onclick="closeModal(true)">Approve</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toast-container"></div>
+
+<script>
+// ─── TOKEN (injected server-side) ──────────────────────────────────────────
+const TOKEN = '__AISS_TOKEN__';
+const BASE  = '';   // same origin
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let state        = null;
+let notifications = [];
+let pendingApproval = null;
+let charts       = {};
+let settings     = {
+  enforce_quarantine: false,
+  enforce_block: false,
+  enforce_hold: true,
+  thresh_low: 20,
+  thresh_medium: 45,
+  thresh_high: 70,
+  ai_enabled: true,
+  allowlist: [],
+};
+let currentPage  = 'overview';
+let es           = null;  // EventSource
+
+// ─── API ─────────────────────────────────────────────────────────────────────
+async function api(path, method = 'GET', body) {
+  const opts = { method, headers: { 'x-aiss-token': TOKEN } };
+  if (body) { opts.headers['content-type'] = 'application/json'; opts.body = JSON.stringify(body); }
+  const r = await fetch(BASE + path, opts);
+  if (!r.ok) throw new Error(await r.text());
+  return r.json();
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function toast(msg, type = 'info', dur = 3500) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').prepend(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 350); }, dur);
+}
+
+// ─── MODAL APPROVAL ──────────────────────────────────────────────────────────
+function requestApproval(title, desc, detail) {
+  return new Promise(resolve => {
+    pendingApproval = resolve;
+    document.getElementById('modal-title').textContent = title;
+    document.getElementById('modal-desc').textContent  = desc;
+    document.getElementById('modal-detail').textContent = detail;
+    document.getElementById('modal-overlay').classList.add('open');
+  });
+}
+function closeModal(approved) {
+  document.getElementById('modal-overlay').classList.remove('open');
+  if (pendingApproval) { pendingApproval(approved); pendingApproval = null; }
+}
+
+// ─── NOTIFICATIONS ───────────────────────────────────────────────────────────
+function pushNotif(msg, level = 'info') {
+  notifications.unshift({ msg, level, at: new Date().toLocaleTimeString() });
+  if (notifications.length > 50) notifications.pop();
+  renderNotifs();
+  const badge = document.getElementById('notif-badge');
+  badge.style.display = 'block';
+}
+function renderNotifs() {
+  const el = document.getElementById('notif-list');
+  if (!notifications.length) { el.innerHTML = '<div class="empty"><div class="empty-text">No notifications</div></div>'; return; }
+  el.innerHTML = notifications.slice(0, 20).map(n =>
+    `<div class="notif-item ${n.level}"><div>${escHtml(n.msg)}</div><div class="notif-time">${n.at}</div></div>`
+  ).join('');
+}
+function clearNotifs() {
+  notifications = [];
+  document.getElementById('notif-badge').style.display = 'none';
+  renderNotifs();
+}
+document.getElementById('notif-btn').onclick = () => {
+  const p = document.getElementById('notif-panel');
+  p.classList.toggle('open');
+  if (p.classList.contains('open')) document.getElementById('notif-badge').style.display = 'none';
+};
+document.addEventListener('click', e => {
+  if (!e.target.closest('#notif-panel') && !e.target.closest('#notif-btn'))
+    document.getElementById('notif-panel').classList.remove('open');
+});
+
+// ─── SIDEBAR NAV ─────────────────────────────────────────────────────────────
+function showPage(name) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.getElementById(`page-${name}`)?.classList.add('active');
+  document.querySelector(`[data-page="${name}"]`)?.classList.add('active');
+  document.getElementById('topbar-title').textContent =
+    name.charAt(0).toUpperCase() + name.slice(1);
+  currentPage = name;
+  // lazy-load page data
+  if (name === 'threats') loadThreats();
+  if (name === 'alerts') loadAlerts();
+  if (name === 'network') loadNetwork();
+  if (name === 'vulnerabilities') loadVulns();
+  if (name === 'assets') loadAssets();
+  if (name === 'incidents') loadIncidents();
+  if (name === 'reports') loadReportSummary();
+  if (name === 'settings') loadSettings();
+  if (name === 'health') loadHealthDetail();
+  // mobile
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('sidebar').classList.remove('mobile-open');
+}
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => showPage(el.dataset.page));
+});
+
+// Collapse button
+document.getElementById('collapse-btn').onclick = () => {
+  const sb = document.getElementById('sidebar');
+  if (window.innerWidth <= 900) {
+    sb.classList.toggle('mobile-open');
+    document.getElementById('overlay').classList.toggle('show', sb.classList.contains('mobile-open'));
+  } else {
+    sb.classList.toggle('collapsed');
+  }
+};
+function closeMobileSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+// ─── THEME ───────────────────────────────────────────────────────────────────
+document.getElementById('theme-btn').onclick = () => {
+  const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('theme-btn').textContent = t === 'dark' ? '🌙' : '☀';
+  Object.values(charts).forEach(c => { c.options.scales && Object.values(c.options.scales).forEach(ax => ax.grid && (ax.grid.color = getComputedStyle(document.documentElement).getPropertyValue('--border'))); c.update(); });
+};
+
+// ─── SEARCH ───────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.getElementById('searchbox').focus(); }
+});
+document.getElementById('searchbox').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  document.querySelectorAll('.tbl tbody tr, .conn-row, .health-row').forEach(row => {
+    row.style.display = q && !row.textContent.toLowerCase().includes(q) ? 'none' : '';
+  });
+});
+
+// ─── UTILS ───────────────────────────────────────────────────────────────────
+const escHtml = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmtTs   = ts => new Date(ts).toLocaleTimeString([], { hour12: false });
+const fmtDt   = ts => new Date(ts).toLocaleString();
+const sevColor = s => ({ critical: 'var(--red)', high: '#ff7700', medium: 'var(--amber)', low: 'var(--green)' }[s] || 'var(--text2)');
+
+// ─── OVERVIEW CHARTS ──────────────────────────────────────────────────────────
+function initCharts() {
+  const borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border');
+  const gridOpts = { color: borderColor, drawBorder: false };
+  const baseScales = {
+    x: { grid: gridOpts, ticks: { color: 'var(--text2)', font: { size: 11 } } },
+    y: { grid: gridOpts, ticks: { color: 'var(--text2)', font: { size: 11 } }, beginAtZero: true }
+  };
+  const tooltipOpts = {
+    backgroundColor: 'var(--bg2)',
+    borderColor: 'var(--border)',
+    borderWidth: 1,
+    titleColor: 'var(--text)',
+    bodyColor: 'var(--text2)',
+    cornerRadius: 8,
+    padding: 10,
+  };
+
+  // Activity line chart
+  const actCtx = document.getElementById('chart-activity').getContext('2d');
+  charts.activity = new Chart(actCtx, {
+    type: 'line',
+    data: { labels: [], datasets: [{
+      label: 'Events',
+      data: [],
+      borderColor: 'var(--accent2)',
+      backgroundColor: 'rgba(0,153,255,0.08)',
+      tension: 0.4,
+      fill: true,
+      pointRadius: 2,
+    }, {
+      label: 'Threats',
+      data: [],
+      borderColor: 'var(--red)',
+      backgroundColor: 'rgba(255,68,68,0.08)',
+      tension: 0.4,
+      fill: true,
+      pointRadius: 2,
+    }]},
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { color: 'var(--text2)', font: { size: 12 }, boxWidth: 12 } }, tooltip: tooltipOpts },
+      scales: baseScales
+    }
+  });
+
+  // Severity donut
+  const sevCtx = document.getElementById('chart-severity').getContext('2d');
+  charts.severity = new Chart(sevCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Critical', 'High', 'Medium', 'Low'],
+      datasets: [{ data: [0, 0, 0, 0], backgroundColor: ['var(--red)', '#ff7700', 'var(--amber)', 'var(--green)'], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend: { display: false }, tooltip: tooltipOpts }
+    }
+  });
+}
+
+// ─── OVERVIEW DATA ────────────────────────────────────────────────────────────
+function updateOverview(s) {
+  const threats = s.threats || [];
+  const events  = s.events  || [];
+  const scans   = s.scans   || [];
+  const metrics = s.metrics || [];
+  const sets    = s.settings || {};
+
+  // KPI: security score (100 − penalties)
+  const critCount = threats.filter(t => t.severity === 'critical' && t.status !== 'released').length;
+  const highCount = threats.filter(t => t.severity === 'high'     && t.status !== 'released').length;
+  const score = Math.max(0, 100 - critCount * 15 - highCount * 7 - threats.filter(t => t.status === 'quarantined').length * 2);
+  document.getElementById('kpi-score').textContent    = score;
+  document.getElementById('kpi-threats').textContent  = threats.filter(t => t.status !== 'released').length;
+  document.getElementById('kpi-alerts').textContent   = events.filter(e => e.level === 'warn' || e.level === 'critical').length;
+  document.getElementById('kpi-assets').textContent   = '1'; // this machine
+
+  const sevCounts = [
+    threats.filter(t => t.severity === 'critical').length,
+    threats.filter(t => t.severity === 'high').length,
+    threats.filter(t => t.severity === 'medium').length,
+    threats.filter(t => t.severity === 'low').length,
+  ];
+  charts.severity.data.datasets[0].data = sevCounts;
+  charts.severity.update();
+
+  // Severity legend
+  const labels = ['Critical', 'High', 'Medium', 'Low'];
+  const colors = ['var(--red)', '#ff7700', 'var(--amber)', 'var(--green)'];
+  document.getElementById('sev-legend').innerHTML = labels.map((l, i) =>
+    `<div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:50%;background:${colors[i]};display:inline-block;flex-shrink:0"></span><span>${l}</span><span style="margin-left:auto;font-weight:600">${sevCounts[i]}</span></div>`
+  ).join('');
+
+  // Activity chart — bucket metrics into time windows
+  updateActivityChart(metrics, '24h');
+
+  // Recent alerts table (top 6 events with level warn/critical)
+  const alertRows = events.filter(e => e.level === 'warn' || e.level === 'critical' || e.level === 'error').slice(0, 6);
+  const tbody = document.getElementById('tbl-alerts');
+  if (alertRows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">No alerts yet</td></tr>';
+  } else {
+    tbody.innerHTML = alertRows.map(e => `
+      <tr>
+        <td><span class="dot ${e.level === 'critical' ? 'dot-red' : e.level === 'warn' ? 'dot-amber' : 'dot-blue'}"></span></td>
+        <td>${escHtml(e.message)}</td>
+        <td style="color:var(--text2)">${escHtml(e.source || '—')}</td>
+        <td class="ts">${fmtTs(e.at)}</td>
+        <td><span class="sev-badge ${e.level === 'critical' ? 'sev-critical' : e.level === 'warn' ? 'sev-medium' : 'sev-low'}">${e.level}</span></td>
+      </tr>`).join('');
+  }
+
+  // System health bars
+  const cpuMetric = metrics.length ? metrics[metrics.length - 1] : null;
+  const cpu  = cpuMetric ? cpuMetric.cpu  : 0;
+  const mem  = cpuMetric ? cpuMetric.mem  : 0;
+  const healthItems = [
+    { label: 'CPU Usage',    pct: cpu,  status: cpu  > 80 ? 'warn' : 'ok' },
+    { label: 'Memory Usage', pct: mem,  status: mem  > 85 ? 'warn' : 'ok' },
+    { label: 'Threat Level', pct: Math.min(100, critCount * 15 + highCount * 7), status: critCount > 0 ? 'err' : highCount > 0 ? 'warn' : 'ok' },
+    { label: 'Scan Coverage', pct: scans.length > 0 ? 100 : 0, status: scans.length > 0 ? 'ok' : 'warn' },
+  ];
+  const barColors = { ok: 'var(--green)', warn: 'var(--amber)', err: 'var(--red)' };
+  const barLabels = { ok: 'Good', warn: 'Warning', err: 'Critical' };
+  document.getElementById('health-bars').innerHTML = healthItems.map(h => `
+    <div class="prog-wrap">
+      <div class="prog-row"><span>${h.label}</span><span style="color:${barColors[h.status]};font-weight:600">${barLabels[h.status]}</span></div>
+      <div class="prog-bar"><div class="prog-fill" style="width:${h.pct.toFixed(0)}%;background:${barColors[h.status]}"></div></div>
+    </div>`).join('');
+
+  // hostname in sidebar
+  if (s.host) {
+    const u = s.host.user || 'User';
+    document.getElementById('sb-uname').textContent = s.host.hostname || 'This Machine';
+    document.getElementById('sb-initial').textContent = u.charAt(0).toUpperCase();
+  }
+}
+
+function updateActivityChart(metrics, range) {
+  const now = Date.now();
+  let buckets, labelFn, bucketMs;
+  if (range === '24h')       { buckets = 24; bucketMs = 3600000;  labelFn = ts => new Date(ts).getHours() + 'h'; }
+  else if (range === '7d')   { buckets = 7;  bucketMs = 86400000; labelFn = ts => new Date(ts).toLocaleDateString([], { weekday: 'short' }); }
+  else                       { buckets = 30; bucketMs = 86400000; labelFn = ts => new Date(ts).getDate() + '/' + (new Date(ts).getMonth()+1); }
+  const pts = Array.from({ length: buckets }, (_, i) => {
+    const start = now - (buckets - i) * bucketMs;
+    const inB = m => { const x = new Date(m.at).getTime(); return x >= start && x < start + bucketMs; };
+    const ms = metrics.filter(inB);
+    return {
+      label: labelFn(start),
+      events: ms.length,
+      threats: ms.filter(m => m.surprise > 4).length,
+    };
+  });
+  charts.activity.data.labels = pts.map(p => p.label);
+  charts.activity.data.datasets[0].data = pts.map(p => p.events);
+  charts.activity.data.datasets[1].data = pts.map(p => p.threats);
+  charts.activity.update();
+}
+
+document.querySelectorAll('.range-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.range-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (state) updateActivityChart(state.metrics || [], btn.dataset.range);
+  });
+});
+
+// ─── THREATS PAGE ─────────────────────────────────────────────────────────────
+function loadThreats() {
+  if (!state) return;
+  const sevFilter    = document.getElementById('threat-filter-sev').value;
+  const statusFilter = document.getElementById('threat-filter-status').value;
+  let rows = (state.threats || []);
+  if (sevFilter)    rows = rows.filter(t => t.severity === sevFilter);
+  if (statusFilter) rows = rows.filter(t => t.status   === statusFilter);
+
+  const el = document.getElementById('threats-list');
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🛡</div><div class="empty-text">No threats found. The system is monitoring.</div></div>';
+    return;
+  }
+  el.innerHTML = rows.map(t => `
+    <div class="card p20" style="margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span class="sev-badge sev-${t.severity}">${t.severity}</span>
+        <strong style="flex:1">${escHtml(t.name)}</strong>
+        <span style="font-size:12px;color:var(--text2)">${fmtDt(t.at)}</span>
+        <div style="display:flex;gap:6px">
+          ${t.status === 'quarantined' ? `<button class="btn btn-approve btn-sm" onclick="threatAction('${t.id}','restore')">↩ Restore</button>` : ''}
+          ${t.status !== 'released' ? `<button class="btn btn-ghost btn-sm" onclick="threatAction('${t.id}','release')">Release</button>` : ''}
+          <button class="btn btn-sm" style="font-size:11px;color:var(--text2)" onclick="toggleDetail('detail-${t.id}')">Details ▾</button>
+        </div>
+      </div>
+      <div style="font-size:12.5px;color:var(--text2);margin-top:6px">
+        Rule: <code>${escHtml(t.rule || '—')}</code> &nbsp;|&nbsp; Action: ${escHtml(t.action || '—')} &nbsp;|&nbsp; Status: <span style="color:${t.status === 'quarantined' ? 'var(--amber)' : t.status === 'contained' ? 'var(--green)' : 'var(--text2)'}">${t.status}</span>
+      </div>
+      <div id="detail-${t.id}" style="display:none;margin-top:12px">
+        <div class="logbox">
+          ${t.file ? `File: ${escHtml(t.file)}\n` : ''}${t.hash ? `SHA256: ${escHtml(t.hash)}\n` : ''}${t.ai ? `\nAI Analysis:\n${escHtml(JSON.stringify(t.ai, null, 2))}` : ''}
+        </div>
+        ${t.ai ? `
+          <div style="margin-top:10px;padding:10px;background:rgba(0,212,170,0.05);border-radius:8px;border:1px solid rgba(0,212,170,0.15);font-size:12.5px">
+            <strong style="color:var(--accent)">AI Reasoning</strong>
+            <p style="margin-top:4px;color:var(--text2);font-style:italic;font-size:11px">AI analysis is advisory. Always verify findings manually.</p>
+            ${t.ai.behavior_summary ? `<p style="margin-top:6px">${escHtml(t.ai.behavior_summary)}</p>` : ''}
+            ${t.ai.mitre_technique ? `<p style="margin-top:4px;color:var(--amber)">MITRE: ${escHtml(t.ai.mitre_technique)}</p>` : ''}
+            ${t.ai.recommended_actions ? `<p style="margin-top:4px"><strong>Actions:</strong> ${escHtml(t.ai.recommended_actions.join(', '))}</p>` : ''}
+          </div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+function toggleDetail(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function threatAction(id, action) {
+  const ok = await requestApproval(
+    action === 'restore' ? 'Restore file from quarantine?' : 'Release threat from monitoring?',
+    `This will ${action === 'restore' ? 'move the file back from quarantine. It may execute.' : 'mark the threat as released. It will no longer be monitored.'}`,
+    `Threat ID: ${id}\nAction: ${action}`
+  );
+  if (!ok) { toast('Action cancelled', 'info'); return; }
+  try {
+    await api(`/api/threats/${id}`, 'PATCH', { action });
+    toast(`${action} action approved and applied`, 'success');
+    pushNotif(`Threat ${id}: ${action} approved`, 'info');
+    loadThreats();
+  } catch(e) {
+    toast(`Action failed: ${e.message}`, 'error');
+  }
+}
+
+document.getElementById('threat-filter-sev').onchange = loadThreats;
+document.getElementById('threat-filter-status').onchange = loadThreats;
+
+// ─── ALERTS PAGE ─────────────────────────────────────────────────────────────
+async function loadAlerts() {
+  try {
+    const alerts = await api('/api/alerts');
+    const el = document.getElementById('alerts-list');
+    if (!alerts.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">✓</div><div class="empty-text">No alerts. System is healthy.</div></div>';
+      return;
+    }
+    el.innerHTML = `
+      <table class="tbl">
+        <thead><tr><th>Level</th><th>Title</th><th>Message</th><th>Time</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>${alerts.map(a => `
+          <tr>
+            <td><span class="sev-badge sev-${a.level === 'critical' ? 'critical' : a.level === 'warn' ? 'medium' : 'high'}">${a.level}</span></td>
+            <td><strong>${escHtml(a.title || '—')}</strong></td>
+            <td>${escHtml(a.message)}</td>
+            <td class="ts">${fmtDt(a.at)}</td>
+            <td><span class="sev-badge sev-${a.status === 'open' ? 'high' : 'low'}">${a.status}</span></td>
+            <td>
+              ${a.status === 'open' ? `<button class="btn btn-ghost btn-sm" onclick="ackAlert('${a.id}')">Ack</button>` : ''}
+              <button class="btn btn-ghost btn-sm" onclick="escalateAlert('${a.id}')">Escalate</button>
+            </td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`;
+  } catch(e) {
+    document.getElementById('alerts-list').innerHTML = `<div class="empty"><div class="empty-text">Failed to load alerts: ${escHtml(e.message)}</div></div>`;
+  }
+}
+
+async function ackAlert(id) {
+  try {
+    await api(`/api/alerts/${id}`, 'PATCH', { status: 'acknowledged' });
+    toast('Alert acknowledged', 'success');
+    loadAlerts();
+  } catch(e) { toast('Failed to acknowledge: ' + e.message, 'error'); }
+}
+async function escalateAlert(id) {
+  try {
+    await api(`/api/alerts/${id}`, 'PATCH', { status: 'escalated' });
+    pushNotif('Alert escalated to incident', 'warn');
+    toast('Alert escalated', 'info');
+    loadAlerts();
+  } catch(e) { toast('Failed to escalate: ' + e.message, 'error'); }
+}
+
+// ─── NETWORK PAGE ─────────────────────────────────────────────────────────────
+async function loadNetwork() {
+  try {
+    const data = await api('/api/network');
+    const cl = document.getElementById('conn-list');
+    const ll = document.getElementById('listen-list');
+    const el = document.getElementById('exposed-list');
+
+    cl.innerHTML = (data.conns || []).map(c =>
+      `<div class="conn-row"><span class="conn-local">:${c.local}</span><span class="conn-arrow">→</span><span class="conn-remote">${escHtml(c.remote)}</span><span class="conn-pid">pid ${c.pid || '?'}</span></div>`
+    ).join('') || '<span style="color:var(--text2)">No active connections</span>';
+
+    ll.innerHTML = (data.listen || []).map(p =>
+      `<div class="conn-row"><span class="conn-local">${escHtml(p.addr)}:${p.port}</span></div>`
+    ).join('') || '<span style="color:var(--text2)">No listening ports</span>';
+
+    const exposed = data.exposed || [];
+    el.innerHTML = exposed.length
+      ? exposed.map(p => `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px"><span style="color:var(--red)">⚠</span> Port <strong>${p.port}</strong> bound to <code>${p.addr}</code> — exposed to all interfaces</div>`).join('')
+      : '<div style="color:var(--green);padding:8px 0;font-size:13px">✓ No dangerously exposed services found</div>';
+  } catch(e) { toast('Network load failed: ' + e.message, 'error'); }
+}
+
+// ─── VULNERABILITIES PAGE ─────────────────────────────────────────────────────
+async function triggerScan() {
+  toast('Scan started…', 'info');
+  try {
+    const r = await api('/api/scan', 'POST', { path: null, limit: 4000 });
+    toast(`Scan complete: ${r.files} files, ${r.findings} findings`, r.findings > 0 ? 'error' : 'success');
+    loadVulns();
+  } catch(e) { toast('Scan failed: ' + e.message, 'error'); }
+}
+
+function loadVulns() {
+  if (!state) return;
+  const scans = state.scans || [];
+  const el = document.getElementById('vuln-list');
+  if (!scans.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><div class="empty-text">No scans yet. Run a scan to detect vulnerabilities.</div></div>';
+    return;
+  }
+  el.innerHTML = scans.map(s => `
+    <div class="card p20" style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <strong>${escHtml(s.root || s.kind || 'Scan')}</strong>
+        <span style="font-size:12px;color:var(--text2)">${fmtDt(s.at)}</span>
+      </div>
+      <div style="margin-top:6px;font-size:13px;color:var(--text2)">
+        ${s.files} files scanned &nbsp;|&nbsp;
+        <span style="color:${s.findings > 0 ? 'var(--red)' : 'var(--green)'}">${s.findings} findings</span> &nbsp;|&nbsp;
+        ${s.contained} contained &nbsp;|&nbsp; ${s.ms}ms
+      </div>
+    </div>`).join('');
+}
+
+// ─── ASSETS PAGE ──────────────────────────────────────────────────────────────
+async function loadAssets() {
+  try {
+    const assets = await api('/api/assets');
+    const host = state?.host;
+    const el = document.getElementById('assets-list');
+    if (!assets.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">◉</div><div class="empty-text">No assets configured.</div></div>';
+      return;
+    }
+    el.innerHTML = assets.map(a => {
+      if (a.type === 'machine' && host) {
+        return `
+          <div class="card p20" style="margin-bottom:12px">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+              <div style="width:42px;height:42px;border-radius:10px;background:rgba(0,212,170,0.15);display:grid;place-items:center;font-size:22px">💻</div>
+              <div><div style="font-size:15px;font-weight:600">${escHtml(a.name)}</div>
+              <div style="font-size:12px;color:var(--green)">● ${a.status || 'Monitored'}</div></div>
+            </div>
+            <table class="tbl">
+              <tbody>
+                <tr><td style="color:var(--text2)">Platform</td><td>${escHtml(host.platform)}</td></tr>
+                <tr><td style="color:var(--text2)">Architecture</td><td>${escHtml(host.arch)}</td></tr>
+                <tr><td style="color:var(--text2)">CPU Cores</td><td>${host.cpus}</td></tr>
+                <tr><td style="color:var(--text2)">CPU Model</td><td>${escHtml(host.model)}</td></tr>
+                <tr><td style="color:var(--text2)">User</td><td>${escHtml(host.user)}</td></tr>
+                <tr><td style="color:var(--text2)">Uptime</td><td>${Math.floor(host.uptime / 3600)}h ${Math.floor((host.uptime % 3600) / 60)}m</td></tr>
+                ${(host.nets || []).map(n => `<tr><td style="color:var(--text2)">${escHtml(n.name)}</td><td>${escHtml(n.address)}</td></tr>`).join('')}
+              </tbody>
+            </table>
+          </div>`;
+      }
+      return `
+        <div class="card p20" style="margin-bottom:12px">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:12px">
+            <div style="width:42px;height:42px;border-radius:10px;background:rgba(0,212,170,0.15);display:grid;place-items:center;font-size:22px">📡</div>
+            <div><div style="font-size:15px;font-weight:600">${escHtml(a.name)}</div>
+            <div style="font-size:12px;color:${a.status === 'monitored' ? 'var(--green)' : a.status === 'pending' ? 'var(--amber)' : 'var(--text2)'}">● ${a.status || 'Unknown'}</div></div>
+          </div>
+          <div style="font-size:13px;color:var(--text2)">
+            Type: ${escHtml(a.type)}${a.ip ? ` | IP: ${escHtml(a.ip)}` : ''} | Last seen: ${fmtDt(a.lastSeen)}
+          </div>
+          ${a.status === 'pending' ? `
+            <div style="margin-top:12px;display:flex;gap:8px">
+              <button class="btn btn-approve btn-sm" onclick="confirmAsset('${a.id}')">Confirm & Monitor</button>
+              <button class="btn btn-danger btn-sm" onclick="removeAsset('${a.id}')">Remove</button>
+            </div>` : ''}
+        </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('assets-list').innerHTML = `<div class="empty"><div class="empty-text">Failed to load assets: ${escHtml(e.message)}</div></div>`;
+  }
+}
+
+async function confirmAsset(id) {
+  try {
+    await api(`/api/assets/${id}`, 'PATCH', { status: 'monitored', confirmed: true });
+    toast('Asset confirmed and now monitored', 'success');
+    loadAssets();
+  } catch(e) { toast('Failed to confirm: ' + e.message, 'error'); }
+}
+async function removeAsset(id) {
+  if (!confirm('Remove this asset from monitoring?')) return;
+  try {
+    await api(`/api/assets/${id}`, 'PATCH', { status: 'removed' });
+    toast('Asset removed', 'info');
+    loadAssets();
+  } catch(e) { toast('Failed to remove: ' + e.message, 'error'); }
+}
+
+// ─── INCIDENTS PAGE ───────────────────────────────────────────────────────────
+async function loadIncidents() {
+  try {
+    const incidents = await api('/api/incidents');
+    const el = document.getElementById('incidents-list');
+    if (!incidents.length) {
+      el.innerHTML = '<div class="empty"><div class="empty-icon">⚡</div><div class="empty-text">No incidents to show.</div></div>';
+      return;
+    }
+    el.innerHTML = incidents.map(inc => {
+      const stages = ['detect', 'isolate', 'analyze', 'contain', 'remediate', 'verify', 'learn'];
+      const currentStageIdx = stages.indexOf(inc.stage);
+      const steps = stages.map((s, i) => ({
+        name: s.charAt(0).toUpperCase() + s.slice(1),
+        done: i < currentStageIdx,
+        active: i === currentStageIdx,
+        desc: inc.timeline?.find(t => t.stage === s)?.at ? `Completed at ${fmtTs(inc.timeline.find(t => t.stage === s).at)}` : (i === currentStageIdx ? 'In progress' : 'Pending')
+      }));
+      return `
+        <div class="card p20" style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+            <div><span class="sev-badge sev-${inc.status === 'active' ? 'critical' : 'low'}">${inc.status}</span></div>
+            <span style="font-size:12px;color:var(--text2)">Incident ID: ${escHtml(inc.id)}</span>
+            <span style="font-size:12px;color:var(--text2)">${fmtDt(inc.at)}</span>
+          </div>
+          <div class="timeline">
+            ${steps.map(s => `
+              <div class="tl-step">
+                <div class="tl-dot ${s.done ? 'done' : s.active ? 'active' : 'pending'}"></div>
+                <div class="tl-title">${s.name}</div>
+                <div class="tl-desc">${escHtml(s.desc)}</div>
+              </div>`).join('')}
+          </div>
+          ${inc.status === 'active' && inc.stage === 'remediate' ? `
+            <div style="margin-top:14px;display:flex;gap:10px">
+              <button class="btn btn-approve btn-sm" onclick="advanceIncident('${inc.id}', 'contain')">Advance to Contain</button>
+              <button class="btn btn-approve btn-sm" onclick="advanceIncident('${inc.id}', 'verify')">Advance to Verify</button>
+            </div>` : ''}
+          ${inc.status === 'active' ? `
+            <div style="margin-top:12px">
+              <button class="btn btn-danger btn-sm" onclick="closeIncident('${inc.id}')">Close Incident</button>
+            </div>` : ''}
+        </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('incidents-list').innerHTML = `<div class="empty"><div class="empty-text">Failed to load incidents: ${escHtml(e.message)}</div></div>`;
+  }
+}
+
+async function advanceIncident(id, stage) {
+  try {
+    await api(`/api/incidents/${id}`, 'PATCH', { stage, action: `Advanced to ${stage}` });
+    toast(`Incident advanced to ${stage}`, 'success');
+    loadIncidents();
+  } catch(e) { toast('Failed to advance: ' + e.message, 'error'); }
+}
+async function closeIncident(id) {
+  if (!confirm('Close this incident?')) return;
+  try {
+    await api(`/api/incidents/${id}`, 'PATCH', { status: 'closed', action: 'Incident closed' });
+    toast('Incident closed', 'success');
+    loadIncidents();
+  } catch(e) { toast('Failed to close: ' + e.message, 'error'); }
+}
+
+// ─── REPORTS PAGE ─────────────────────────────────────────────────────────────
+function loadReportSummary() {
+  if (!state) return;
+  const t = state.threats || [];
+  const e = state.events  || [];
+  const s = state.scans   || [];
+  document.getElementById('report-summary').innerHTML = `
+    <table class="tbl">
+      <tbody>
+        <tr><td style="color:var(--text2)">Total threats</td><td>${t.length}</td></tr>
+        <tr><td style="color:var(--text2)">Critical threats</td><td style="color:var(--red)">${t.filter(x=>x.severity==='critical').length}</td></tr>
+        <tr><td style="color:var(--text2)">Quarantined files</td><td>${t.filter(x=>x.status==='quarantined').length}</td></tr>
+        <tr><td style="color:var(--text2)">Total scans</td><td>${s.length}</td></tr>
+        <tr><td style="color:var(--text2)">Total events logged</td><td>${e.length}</td></tr>
+        <tr><td style="color:var(--text2)">Warnings</td><td style="color:var(--amber)">${e.filter(x=>x.level==='warn').length}</td></tr>
+      </tbody>
+    </table>`;
+}
+
+function exportReport(fmt) {
+  if (!state) { toast('No data to export', 'error'); return; }
+  const from = document.getElementById('report-from').value;
+  const to   = document.getElementById('report-to').value;
+  let threats = state.threats || [];
+  let events  = state.events  || [];
+  if (from) { threats = threats.filter(t => t.at >= from); events = events.filter(e => e.at >= from); }
+  if (to)   { threats = threats.filter(t => t.at <= to + 'T23:59:59'); events = events.filter(e => e.at <= to + 'T23:59:59'); }
+  const report = { generated: new Date().toISOString(), threats, events, scans: state.scans || [] };
+  if (fmt === 'json') {
+    download('aiss-report.json', JSON.stringify(report, null, 2), 'application/json');
+  } else {
+    const rows = [['type','id','at','name','severity','status'],
+      ...threats.map(t => ['threat', t.id, t.at, t.name, t.severity, t.status]),
+      ...events.map(e => ['event', e.id, e.at, e.message, e.level, ''])
+    ].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    download('aiss-report.csv', rows, 'text/csv');
+  }
+  toast('Report exported', 'success');
+}
+function download(name, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = name; a.click();
+}
+
+// ─── SETTINGS PAGE ────────────────────────────────────────────────────────────
+async function loadSettings() {
+  try {
+    const s = await api('/api/settings');
+    settings = { ...settings, ...s };
+  } catch(e) {
+    // Fallback to local storage if API fails
+    try {
+      const saved = JSON.parse(localStorage.getItem('aiss-settings') || '{}');
+      settings = { ...settings, ...saved };
+    } catch {}
+  }
+
+  document.getElementById('settings-enforcement').innerHTML = [
+    { key: 'enforce_hold',       label: 'HOLD suspicious processes',  desc: 'Suspend and wait for approval on medium-risk events' },
+    { key: 'enforce_quarantine', label: 'AUTO-QUARANTINE high risk',   desc: 'Automatically quarantine high/critical files without approval' },
+    { key: 'enforce_block',      label: 'AUTO-BLOCK critical threats', desc: 'Kill process and add firewall rule for critical threats' },
+  ].map(row => `
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">${row.label}</div>
+        <div class="setting-desc">${row.desc}</div>
+      </div>
+      <div class="toggle ${settings[row.key] ? 'on' : ''}" onclick="toggleSetting('${row.key}', this)"></div>
+    </div>`).join('');
+
+  document.getElementById('settings-thresholds').innerHTML = [
+    { key: 'thresh_low',    label: 'Low → Monitor only',  color: 'var(--green)' },
+    { key: 'thresh_medium', label: 'Medium → Hold',       color: 'var(--amber)' },
+    { key: 'thresh_high',   label: 'High → Quarantine',   color: 'var(--red)'   },
+  ].map(row => `
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label" style="color:${row.color}">${row.label}</div>
+        <div class="setting-desc">Score threshold (0–100). Above this value triggers the action.</div>
+      </div>
+      <input class="thresh-input" type="number" min="0" max="100" value="${settings[row.key] || 0}"
+        onchange="updateThreshold('${row.key}', this.value)" />
+    </div>`).join('');
+
+  const allowlist = settings.allowlist || [];
+  document.getElementById('settings-allowlist').innerHTML = `
+    <div style="margin-bottom:12px">
+      ${allowlist.length ? allowlist.map((a, i) => `
+        <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <code style="flex:1;font-size:12px">${escHtml(a)}</code>
+          <button class="btn btn-danger btn-sm" onclick="removeAllowlist(${i})">Remove</button>
+        </div>`).join('') : '<div style="color:var(--text2);font-size:13px;padding:8px 0">No entries. Add a path, hash, or process name to trust.</div>'}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <input id="allowlist-input" class="thresh-input" style="flex:1;width:auto" type="text" placeholder="Path, SHA256, or process name…" />
+      <button class="btn btn-primary btn-sm" onclick="addAllowlist()">+ Add</button>
+    </div>`;
+
+  document.getElementById('settings-ai').innerHTML = `
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">AI Security Reasoning</div>
+        <div class="setting-desc">Send redacted threat data to the AI layer for analysis and recommendations.</div>
+      </div>
+      <div class="toggle ${settings.ai_enabled ? 'on' : ''}" onclick="toggleSetting('ai_enabled', this)"></div>
+    </div>`;
+}
+
+async function toggleSetting(key, el) {
+  el.classList.toggle('on');
+  settings[key] = el.classList.contains('on');
+  await saveSettings();
+}
+async function updateThreshold(key, val) {
+  settings[key] = Number(val);
+  await saveSettings();
+}
+async function addAllowlist() {
+  const inp = document.getElementById('allowlist-input');
+  const v = inp.value.trim();
+  if (!v) return;
+  settings.allowlist = [...(settings.allowlist || []), v];
+  inp.value = '';
+  await saveSettings();
+  loadSettings();
+  toast('Added to allowlist', 'success');
+}
+async function removeAllowlist(i) {
+  settings.allowlist.splice(i, 1);
+  await saveSettings();
+  loadSettings();
+  toast('Removed from allowlist', 'info');
+}
+async function saveSettings() {
+  try {
+    await api('/api/settings', 'PATCH', settings);
+    localStorage.setItem('aiss-settings', JSON.stringify(settings));
+    toast('Settings saved', 'success');
+  } catch(e) {
+    localStorage.setItem('aiss-settings', JSON.stringify(settings));
+    toast('Settings saved locally (agent not reachable)', 'warn');
+  }
+}
+function loadSavedSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('aiss-settings') || '{}');
+    settings = { ...settings, ...saved };
+  } catch {}
+}
+
+// ─── HEALTH PAGE ─────────────────────────────────────────────────────────────
+async function loadHealthDetail() {
+  try {
+    const health = await api('/api/health');
+    const services = [
+      { name: 'Sensor Engine',   status: health.sensors?.status || 'ok',  uptime: health.sensors?.lastCheck ? `${fmtTs(health.sensors.lastCheck)}` : 'Running' },
+      { name: 'File Scanner',    status: health.scanner?.status || 'ok', uptime: health.scanner?.lastCheck ? `${fmtTs(health.scanner.lastCheck)}` : 'Active' },
+      { name: 'Network Monitor', status: health.network?.status || 'ok', uptime: health.network?.lastCheck ? `${fmtTs(health.network.lastCheck)}` : 'Active' },
+      { name: 'Local Database',  status: health.database?.status || 'ok', uptime: health.database?.lastCheck ? `${fmtTs(health.database.lastCheck)}` : 'Active' },
+      { name: 'Overall',        status: health.running ? 'ok' : 'err', uptime: `${Math.floor(health.uptime / 60)}m uptime` },
+    ];
+    document.getElementById('health-detail').innerHTML = services.map(s => `
+      <div class="health-row">
+        <div class="health-name">${s.name}</div>
+        <div style="color:var(--text2);font-size:12px;flex:1">${s.uptime}</div>
+        <span class="health-status hs-${s.status}">${s.status === 'ok' ? 'Online' : s.status === 'warn' ? 'Degraded' : 'Offline'}</span>
+        ${s.status !== 'ok' ? `<span class="hs-restart" onclick="restartService('${s.name.replace(/ /g,'-').toLowerCase()}')">Restart</span>` : ''}
+      </div>`).join('');
+  } catch(e) {
+    document.getElementById('health-detail').innerHTML = `<div class="empty"><div class="empty-text">Failed to load health: ${escHtml(e.message)}</div></div>`;
+  }
+}
+
+async function restartService(service) {
+  try {
+    await api(`/api/health/${service}`, 'POST');
+    toast('Restart signal sent', 'success');
+    setTimeout(loadHealthDetail, 2000);
+  } catch(e) {
+    toast('Restart failed: ' + e.message, 'error');
+  }
+}
+
+// ─── LIVE LOG (Health page) ────────────────────────────────────────────────────
+const MAX_LOG_LINES = 200;
+const logLines = [];
+function appendLog(ev) {
+  const cls = ev.level === 'critical' || ev.level === 'error' ? 'log-error' : ev.level === 'warn' ? 'log-warn' : ev.level === 'info' ? 'log-info' : 'log-ok';
+  logLines.push(`<span class="log-ts">${fmtTs(ev.at)}</span> <span class="${cls}">[${ev.level}]</span> <span style="color:var(--text2)">${escHtml(ev.source||'—')}</span> ${escHtml(ev.message)}`);
+  if (logLines.length > MAX_LOG_LINES) logLines.shift();
+  const box = document.getElementById('health-log');
+  if (box) { box.innerHTML = logLines.join('<br>'); box.scrollTop = box.scrollHeight; }
+}
+
+// ─── SSE LIVE EVENTS ─────────────────────────────────────────────────────────
+function connectSSE() {
+  if (es) { es.close(); }
+  es = new EventSource(`/api/stream?t=${TOKEN}`);
+  es.addEventListener('metric', e => {
+    const d = JSON.parse(e.data);
+    if (!state) state = { metrics: [], threats: [], events: [], scans: [], settings: {} };
+    state.metrics.push(d);
+    if (state.metrics.length > 720) state.metrics.shift();
+    if (currentPage === 'overview') updateOverview(state);
+  });
+  es.addEventListener('threat', e => {
+    const d = JSON.parse(e.data);
+    if (!state) return;
+    const idx = state.threats.findIndex(t => t.id === d.id);
+    if (idx >= 0) state.threats[idx] = d; else state.threats.unshift(d);
+    pushNotif(`⚠ Threat detected: ${d.name} (${d.severity})`, d.severity === 'critical' ? 'critical' : 'warn');
+    if (currentPage === 'overview') updateOverview(state);
+    if (currentPage === 'threats') loadThreats();
+    if (currentPage === 'incidents') loadIncidents();
+  });
+  es.addEventListener('scan', e => {
+    const d = JSON.parse(e.data);
+    if (!state) return;
+    state.scans.unshift(d);
+    if (d.findings > 0) pushNotif(`Scan: ${d.findings} findings in ${d.root || 'directory'}`, 'warn');
+    if (currentPage === 'vulnerabilities') loadVulns();
+  });
+  es.addEventListener('event', e => {
+    const d = JSON.parse(e.data);
+    if (!state) return;
+    state.events.unshift(d);
+    if (state.events.length > 500) state.events.pop();
+    appendLog(d);
+    if (d.level === 'warn' || d.level === 'critical') pushNotif(d.message, d.level === 'critical' ? 'critical' : 'warn');
+    if (currentPage === 'overview') updateOverview(state);
+    if (currentPage === 'alerts') loadAlerts();
+  });
+  es.onerror = () => { setTimeout(connectSSE, 3000); };
+}
+
+// ─── INITIAL LOAD ─────────────────────────────────────────────────────────────
+async function init() {
+  loadSavedSettings();
+  initCharts();
+  try {
+    state = await api('/api/state');
+    updateOverview(state);
+    // pre-fill health log with existing events
+    (state.events || []).slice().reverse().forEach(appendLog);
+  } catch(e) {
+    document.getElementById('page-overview').innerHTML =
+      `<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Cannot connect to AISS engine.<br><small style="color:var(--text2)">${escHtml(e.message)}</small></div></div>`;
+  }
+  connectSSE();
+  // set default date range for reports
+  const today = new Date().toISOString().split('T')[0];
+  const week  = new Date(Date.now() - 7*86400000).toISOString().split('T')[0];
+  document.getElementById('report-from').value = week;
+  document.getElementById('report-to').value   = today;
+}
+
+init();
+</script>
+</body>
+</html>

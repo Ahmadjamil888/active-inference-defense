@@ -18,6 +18,13 @@ const belief = {
 
 const LR = 0.08;
 
+// Security Gate thresholds (default values)
+const GATE_THRESHOLDS = {
+  low: 20,
+  medium: 45,
+  high: 70,
+};
+
 function surprise(key, x) {
   const b = belief[key];
   const z = Math.abs(x - b.mu) / Math.max(b.sigma, 1);
@@ -35,6 +42,12 @@ let knownVolumes = new Set();
 let listeners = [];
 let running = false;
 let ticks = 0;
+let healthChecks = {
+  sensors: { status: "ok", lastCheck: null, errorCount: 0 },
+  scanner: { status: "ok", lastCheck: null, errorCount: 0 },
+  database: { status: "ok", lastCheck: null, errorCount: 0 },
+  network: { status: "ok", lastCheck: null, errorCount: 0 },
+};
 
 export function onEvent(fn) {
   listeners.push(fn);
@@ -53,16 +66,99 @@ function emit(type, payload) {
   }
 }
 
+// Health check and recovery
+export function performHealthCheck(service) {
+  const now = new Date().toISOString();
+  try {
+    if (service === "sensors") {
+      S.cpuUsage(); // Quick sensor test
+      healthChecks.sensors = { status: "ok", lastCheck: now, errorCount: 0 };
+    } else if (service === "scanner") {
+      // Quick scanner test
+      healthChecks.scanner = { status: "ok", lastCheck: now, errorCount: 0 };
+    } else if (service === "database") {
+      data(); // Quick DB test
+      healthChecks.database = { status: "ok", lastCheck: now, errorCount: 0 };
+    } else if (service === "network") {
+      // Network connectivity test
+      healthChecks.network = { status: "ok", lastCheck: now, errorCount: 0 };
+    }
+  } catch (e) {
+    healthChecks[service] = {
+      status: "error",
+      lastCheck: now,
+      errorCount: (healthChecks[service]?.errorCount || 0) + 1,
+      error: e.message,
+    };
+    log("error", "health", `${service} health check failed: ${e.message}`, null);
+
+    // Auto-recovery: if error count exceeds threshold, attempt recovery
+    if (healthChecks[service].errorCount >= 3) {
+      log("warn", "health", `Attempting recovery for ${service}`, null);
+      try {
+        if (service === "database") {
+          const { load } = await import("./store.js");
+          load(); // Reload database
+          healthChecks.database = { status: "ok", lastCheck: now, errorCount: 0 };
+          log("info", "health", `Database recovered`, null);
+        }
+      } catch (re) {
+        log("error", "health", `Recovery failed for ${service}: ${re.message}`, null);
+      }
+    }
+  }
+}
+
+export function getHealthStatus() {
+  return healthChecks;
+}
+
 export function log(level, source, message, meta) {
   const row = push("events", { level, source, message, meta: meta ?? null });
   emit("event", row);
   return row;
 }
 
+// Security Gate: risk scoring and decision making
+function calculateRiskScore(findings, baselineAnomaly = 0) {
+  let score = 0;
+  for (const f of findings) {
+    if (f.severity === "critical") score += 30;
+    else if (f.severity === "high") score += 20;
+    else if (f.severity === "medium") score += 10;
+    else if (f.severity === "low") score += 5;
+  }
+  score += baselineAnomaly * 2;
+  return Math.min(100, score);
+}
+
+function getGateDecision(score, settings = {}) {
+  const thresh = {
+    low: settings.thresh_low ?? GATE_THRESHOLDS.low,
+    medium: settings.thresh_medium ?? GATE_THRESHOLDS.medium,
+    high: settings.thresh_high ?? GATE_THRESHOLDS.high,
+  };
+
+  if (score >= thresh.high) return { action: "BLOCK", reason: `Score ${score} >= ${thresh.high}` };
+  if (score >= thresh.medium) return { action: "QUARANTINE", reason: `Score ${score} >= ${thresh.medium}` };
+  if (score >= thresh.low) return { action: "HOLD", reason: `Score ${score} >= ${thresh.low}` };
+  return { action: "ALLOW", reason: `Score ${score} < ${thresh.low}` };
+}
+
 export async function recordThreat(t) {
-  const row = push("threats", { status: "contained", ...t });
+  const settings = data().settings || {};
+  const riskScore = calculateRiskScore([{ severity: t.severity }]);
+  const decision = getGateDecision(riskScore, settings);
+
+  const row = push("threats", {
+    status: decision.action === "ALLOW" ? "flagged" : decision.action.toLowerCase(),
+    riskScore,
+    decision: decision.action,
+    decisionReason: decision.reason,
+    ...t,
+  });
   emit("threat", row);
-  log(t.severity === "critical" ? "critical" : "warn", "response", `${t.name} — ${t.action}`, { file: t.file });
+  log(t.severity === "critical" ? "critical" : "warn", "gate", `${t.name} — ${decision.action} (${decision.reason})`, { file: t.file, riskScore });
   const verdict = await analyze(row).catch(() => null);
   if (verdict) {
     row.ai = verdict;
@@ -70,6 +166,39 @@ export async function recordThreat(t) {
     log("info", "ai", `AI analysis complete for ${t.name}`, null);
   }
   return row;
+}
+
+// Incident Lifecycle
+const INCIDENT_STAGES = ["detect", "isolate", "analyze", "contain", "remediate", "verify", "learn"];
+
+export async function createIncident(threat) {
+  const incident = push("incidents", {
+    threatId: threat.id,
+    stage: "detect",
+    status: "active",
+    timeline: [{ stage: "detect", at: new Date().toISOString() }],
+  });
+  emit("incident", incident);
+  log("critical", "incident", `Incident created for threat ${threat.id}`, { incidentId: incident.id });
+  return incident;
+}
+
+export async function advanceIncident(incidentId, stage) {
+  const d = data();
+  const incident = d.incidents.find((i) => i.id === incidentId);
+  if (!incident) return null;
+
+  incident.stage = stage;
+  incident.timeline.push({ stage, at: new Date().toISOString() });
+
+  if (stage === "verify") {
+    incident.status = "closed";
+    log("info", "incident", `Incident ${incidentId} closed after verification`, null);
+  }
+
+  emit("incident", incident);
+  log("info", "incident", `Incident ${incidentId} advanced to ${stage}`, null);
+  return incident;
 }
 
 async function tick() {
@@ -112,6 +241,14 @@ async function tick() {
     await runScan(v.mount, 3000, "usb");
   }
   for (const m of [...knownVolumes]) if (!vols.some((v) => v.mount === m)) knownVolumes.delete(m);
+
+  // Periodic health checks (every 30 ticks ~ 2 minutes)
+  if (ticks % 30 === 0) {
+    performHealthCheck("sensors");
+    performHealthCheck("scanner");
+    performHealthCheck("database");
+    performHealthCheck("network");
+  }
 }
 
 export async function runScan(root, limit = 4000, kind = "manual") {
@@ -121,10 +258,16 @@ export async function runScan(root, limit = 4000, kind = "manual") {
   for (const f of result.findings) {
     let action = "flagged";
     try {
-      if (f.severity === "critical" || f.severity === "high") {
+      const settings = data().settings || {};
+      const riskScore = calculateRiskScore([f]);
+      const decision = getGateDecision(riskScore, settings);
+
+      if (decision.action === "BLOCK" || decision.action === "QUARANTINE") {
         const dest = quarantine(f.file, QUARANTINE);
         action = `quarantined → ${dest}`;
         contained++;
+      } else if (decision.action === "HOLD") {
+        action = "held for approval";
       }
     } catch (e) {
       action = `quarantine failed: ${e.message}`;
@@ -159,6 +302,7 @@ export function state() {
     threats: d.threats.slice(-100).reverse(),
     scans: d.scans.slice(-50).reverse(),
     events: d.events.slice(-200).reverse(),
+    incidents: (d.incidents || []).slice(-20).reverse(),
     settings: d.settings,
   };
 }

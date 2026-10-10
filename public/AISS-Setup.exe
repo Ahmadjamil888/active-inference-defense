@@ -1,0 +1,6 @@
+This is a placeholder file. In production, replace this with the actual installer EXE built using:
+- Inno Setup (https://jrsoftware.org/isdl.php)
+- NSIS (https://nsis.sourceforge.io/)
+- Or use the PowerShell installer directly from the installer/ folder
+
+For now, users should download the ZIP and run Setup.cmd manually.

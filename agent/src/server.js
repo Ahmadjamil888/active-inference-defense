@@ -67,6 +67,109 @@ export function serve(port, token) {
       }
       if (p === "/api/volumes") return json(res, 200, await S.volumes());
       if (p === "/api/disks") return json(res, 200, await S.disks());
+      
+      // Alerts API
+      if (p === "/api/alerts") {
+        const state = E.state();
+        const alerts = (state.events || [])
+          .filter((e) => e.level === "warn" || e.level === "critical" || e.level === "error")
+          .map((e) => ({
+            id: e.id,
+            level: e.level,
+            title: e.kind,
+            message: e.message,
+            at: e.at,
+            status: "open",
+          }));
+        return json(res, 200, alerts);
+      }
+      if (p.startsWith("/api/alerts/") && req.method === "PATCH") {
+        const id = p.split("/").pop();
+        const b = await body(req);
+        // Log the alert action
+        E.log("info", "alert", `Alert ${id.slice(0, 8)} marked ${b.status}`, null);
+        return json(res, 200, { ok: true });
+      }
+
+      // Incidents API
+      if (p === "/api/incidents") {
+        const state = E.state();
+        const threats = state.threats || [];
+        const incidents = threats.slice(0, 10).map((t) => ({
+          id: t.id,
+          status: t.status === "quarantined" ? "active" : "closed",
+          stage: "contain",
+          at: t.at,
+          timeline: [{ stage: "detect", at: t.at }],
+        }));
+        return json(res, 200, incidents);
+      }
+      if (p.startsWith("/api/incidents/") && req.method === "PATCH") {
+        const id = p.split("/").pop();
+        const b = await body(req);
+        E.log("info", "incident", `Incident ${id.slice(0, 8)} ${b.action}`, null);
+        return json(res, 200, { ok: true });
+      }
+
+      // Assets API
+      if (p === "/api/assets") {
+        const state = E.state();
+        const host = state.host;
+        return json(res, 200, [
+          {
+            id: "this-machine",
+            type: "machine",
+            name: host?.hostname || "This Machine",
+            status: "monitored",
+            ip: host?.nets?.[0]?.address || null,
+            lastSeen: new Date().toISOString(),
+          },
+        ]);
+      }
+      if (p.startsWith("/api/assets/") && req.method === "PATCH") {
+        const id = p.split("/").pop();
+        const b = await body(req);
+        E.log("info", "asset", `Asset ${id.slice(0, 8)} ${b.status ? `marked ${b.status}` : "removed"}`, null);
+        return json(res, 200, { ok: true });
+      }
+
+      // Settings API
+      if (p === "/api/settings") {
+        const state = E.state();
+        return json(res, 200, state.settings || {});
+      }
+      if (p === "/api/settings" && req.method === "PATCH") {
+        const b = await body(req);
+        const state = E.state();
+        Object.assign(state.settings, b);
+        E.log("info", "settings", "Settings updated", null);
+        return json(res, 200, state.settings);
+      }
+
+      // Threat actions API
+      if (p.startsWith("/api/threats/") && req.method === "PATCH") {
+        const id = p.split("/").pop();
+        const b = await body(req);
+        E.log("info", "threat", `Threat ${id.slice(0, 8)} action: ${b.action}`, null);
+        return json(res, 200, { ok: true });
+      }
+
+      // Health API
+      if (p === "/api/health") {
+        const health = E.getHealthStatus();
+        const state = E.state();
+        return json(res, 200, {
+          ...health,
+          running: state.running,
+          uptime: state.settings?.startedAt ? Math.floor((Date.now() - new Date(state.settings.startedAt).getTime()) / 1000) : 0,
+        });
+      }
+      if (p.startsWith("/api/health/") && req.method === "POST") {
+        const service = p.split("/").pop();
+        E.performHealthCheck(service);
+        return json(res, 200, { ok: true });
+      }
+
       if (p === "/api/scan" && req.method === "POST") {
         const b = await body(req);
         const target = typeof b.path === "string" && b.path ? b.path : path.join(os.homedir(), "Downloads");

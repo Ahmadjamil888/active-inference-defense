@@ -1,0 +1,54 @@
+═══════════════════════════════════════════════════════════════════════════════
+                          AISS INSTALLATION GUIDE
+═══════════════════════════════════════════════════════════════════════════════
+
+QUICK START
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Double-click Setup.cmd to launch the AISS Setup Wizard
+2. Follow the on-screen instructions
+3. Open a NEW Command Prompt and type: aiss
+4. Dashboard opens automatically at http://127.0.0.1:8179
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SYSTEM REQUIREMENTS
+═══════════════════════════════════════════════════════════════════════════════
+
+• Windows 10 or 11 (64-bit)
+• 4 GB RAM minimum
+• 500 MB disk space
+• Administrator rights for installation
+
+═══════════════════════════════════════════════════════════════════════════════
+
+COMMON COMMANDS
+═══════════════════════════════════════════════════════════════════════════════
+
+aiss              Start AISS and open dashboard
+aiss stop         Stop AISS
+aiss status       Check status
+aiss logs         View logs
+aiss scan [path]  Scan a directory
+aiss --help       Show all commands
+
+═══════════════════════════════════════════════════════════════════════════════
+
+DATA PRIVACY
+═══════════════════════════════════════════════════════════════════════════════
+
+AISS runs entirely on your local machine. All data stays on your computer.
+No telemetry or data collection. No data is sent to external servers
+(except optional AI cloud features).
+
+═══════════════════════════════════════════════════════════════════════════════
+
+SUPPORT
+═══════════════════════════════════════════════════════════════════════════════
+
+For issues or questions, visit: https://github.com/your-repo/aiss
+
+═══════════════════════════════════════════════════════════════════════════════
+
+AISS - Agentic AI Security System v1.0.0
+Your data never leaves your computer.

@@ -6,5 +6,8 @@
   "bin": { "aiss": "./bin/aiss.js" },
   "engines": { "node": ">=18" },
   "files": ["bin", "src", "public"],
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "node-windows": "^1.0.0-beta.8"
+  }
 }

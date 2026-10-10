@@ -6,7 +6,7 @@ import os from "node:os";
 export const HOME = path.join(os.homedir(), ".aiss");
 const FILE = path.join(HOME, "db.json");
 
-const EMPTY = { events: [], threats: [], scans: [], metrics: [], settings: {} };
+const EMPTY = { events: [], threats: [], scans: [], metrics: [], incidents: [], settings: {} };
 let db = { ...EMPTY };
 let dirty = false;
 
