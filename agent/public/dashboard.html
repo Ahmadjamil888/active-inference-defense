@@ -766,17 +766,18 @@ function updateOverview(s) {
   const scans   = s.scans   || [];
   const metrics = s.metrics || [];
   const sets    = s.settings || {};
+  const isPlaceholder = s.placeholder;
 
   // KPI: security score (100 − penalties)
   const critCount = threats.filter(t => t.severity === 'critical' && t.status !== 'released').length;
   const highCount = threats.filter(t => t.severity === 'high'     && t.status !== 'released').length;
-  const score = Math.max(0, 100 - critCount * 15 - highCount * 7 - threats.filter(t => t.status === 'quarantined').length * 2);
+  const score = isPlaceholder ? 85 : Math.max(0, 100 - critCount * 15 - highCount * 7 - threats.filter(t => t.status === 'quarantined').length * 2);
   document.getElementById('kpi-score').textContent    = score;
-  document.getElementById('kpi-threats').textContent  = threats.filter(t => t.status !== 'released').length;
-  document.getElementById('kpi-alerts').textContent   = events.filter(e => e.level === 'warn' || e.level === 'critical').length;
+  document.getElementById('kpi-threats').textContent  = isPlaceholder ? 0 : threats.filter(t => t.status !== 'released').length;
+  document.getElementById('kpi-alerts').textContent   = isPlaceholder ? 0 : events.filter(e => e.level === 'warn' || e.level === 'critical').length;
   document.getElementById('kpi-assets').textContent   = '1'; // this machine
 
-  const sevCounts = [
+  const sevCounts = isPlaceholder ? [1, 2, 3, 5] : [
     threats.filter(t => t.severity === 'critical').length,
     threats.filter(t => t.severity === 'high').length,
     threats.filter(t => t.severity === 'medium').length,
@@ -793,13 +794,24 @@ function updateOverview(s) {
   ).join('');
 
   // Activity chart — bucket metrics into time windows
-  updateActivityChart(metrics, '24h');
+  updateActivityChart(metrics, '24h', isPlaceholder);
 
   // Recent alerts table (top 6 events with level warn/critical)
   const alertRows = events.filter(e => e.level === 'warn' || e.level === 'critical' || e.level === 'error').slice(0, 6);
   const tbody = document.getElementById('tbl-alerts');
   if (alertRows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">No alerts yet</td></tr>';
+    if (isPlaceholder) {
+      tbody.innerHTML = `
+        <tr><td><span class="dot dot-green"></span></td><td>System health check completed</td><td>sensor</td><td class="ts">Just now</td><td><span class="sev-badge sev-low">info</span></td></tr>
+        <tr><td><span class="dot dot-green"></span></td><td>Baseline scan finished</td><td>scanner</td><td class="ts">1 min ago</td><td><span class="sev-badge sev-low">info</span></td></tr>
+        <tr><td><span class="dot dot-green"></span></td><td>No threats detected</td><td>gate</td><td class="ts">2 min ago</td><td><span class="sev-badge sev-low">info</span></td></tr>
+        <tr><td><span class="dot dot-green"></span></td><td>Network baseline established</td><td>sensor</td><td class="ts">3 min ago</td><td><span class="sev-badge sev-low">info</span></td></tr>
+        <tr><td><span class="dot dot-green"></span></td><td>All services operational</td><td>health</td><td class="ts">4 min ago</td><td><span class="sev-badge sev-low">info</span></td></tr>
+        <tr><td><span class="dot dot-green"></span></td><td>AISS monitoring active</td><td>engine</td><td class="ts">5 min ago</td><td><span class="sev-badge sev-low">info</span></td></tr>
+      `;
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text2)">No alerts yet</td></tr>';
+    }
   } else {
     tbody.innerHTML = alertRows.map(e => `
       <tr>
@@ -837,22 +849,34 @@ function updateOverview(s) {
   }
 }
 
-function updateActivityChart(metrics, range) {
+function updateActivityChart(metrics, range, isPlaceholder) {
   const now = Date.now();
   let buckets, labelFn, bucketMs;
   if (range === '24h')       { buckets = 24; bucketMs = 3600000;  labelFn = ts => new Date(ts).getHours() + 'h'; }
   else if (range === '7d')   { buckets = 7;  bucketMs = 86400000; labelFn = ts => new Date(ts).toLocaleDateString([], { weekday: 'short' }); }
   else                       { buckets = 30; bucketMs = 86400000; labelFn = ts => new Date(ts).getDate() + '/' + (new Date(ts).getMonth()+1); }
-  const pts = Array.from({ length: buckets }, (_, i) => {
-    const start = now - (buckets - i) * bucketMs;
-    const inB = m => { const x = new Date(m.at).getTime(); return x >= start && x < start + bucketMs; };
-    const ms = metrics.filter(inB);
-    return {
-      label: labelFn(start),
-      events: ms.length,
-      threats: ms.filter(m => m.surprise > 4).length,
-    };
-  });
+  
+  let pts;
+  if (isPlaceholder) {
+    // Generate realistic placeholder data
+    pts = Array.from({ length: buckets }, (_, i) => ({
+      label: labelFn(now - (buckets - i) * bucketMs),
+      events: Math.floor(Math.random() * 50) + 10,
+      threats: Math.floor(Math.random() * 5),
+    }));
+  } else {
+    pts = Array.from({ length: buckets }, (_, i) => {
+      const start = now - (buckets - i) * bucketMs;
+      const inB = m => { const x = new Date(m.at).getTime(); return x >= start && x < start + bucketMs; };
+      const ms = metrics.filter(inB);
+      return {
+        label: labelFn(start),
+        events: ms.length,
+        threats: ms.filter(m => m.surprise > 4).length,
+      };
+    });
+  }
+  
   charts.activity.data.labels = pts.map(p => p.label);
   charts.activity.data.datasets[0].data = pts.map(p => p.events);
   charts.activity.data.datasets[1].data = pts.map(p => p.threats);
@@ -1419,6 +1443,16 @@ async function init() {
     updateOverview(state);
     // pre-fill health log with existing events
     (state.events || []).slice().reverse().forEach(appendLog);
+    
+    // Show placeholder indicator if in placeholder mode
+    if (state.placeholder) {
+      const notice = document.createElement('div');
+      notice.id = 'placeholder-notice';
+      notice.className = 'fixed top-20 left-1/2 -translate-x-1/2 bg-amber-500/20 border border-amber-500/50 px-4 py-2 rounded-lg text-amber-200 text-sm z-50';
+      notice.innerHTML = '📊 Demo Mode - Showing placeholder data. Run scans to generate real data.';
+      document.body.appendChild(notice);
+      setTimeout(() => notice.remove(), 10000);
+    }
   } catch(e) {
     document.getElementById('page-overview').innerHTML =
       `<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Cannot connect to AISS engine.<br><small style="color:var(--text2)">${escHtml(e.message)}</small></div></div>`;

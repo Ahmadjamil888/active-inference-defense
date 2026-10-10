@@ -304,6 +304,8 @@ export function state() {
     events: d.events.slice(-200).reverse(),
     incidents: (d.incidents || []).slice(-20).reverse(),
     settings: d.settings,
+    // Placeholder data for demo purposes when no real data exists
+    placeholder: d.threats.length === 0,
   };
 }
 

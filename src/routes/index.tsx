@@ -51,7 +51,8 @@ function Index() {
               <button onClick={() => scrollToSection("features")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</button>
               <button onClick={() => scrollToSection("how-it-works")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">How It Works</button>
               <button onClick={() => scrollToSection("quick-start")} className="text-sm text-muted-foreground hover:text-foreground transition-colors">Quick Start</button>
-              <button onClick={() => scrollToSection("download")} className="cta text-sm px-6 py-2">Download</button>
+              <a href="/docs" className="text-sm text-muted-foreground hover:text-foreground transition-colors">Documentation</a>
+              <button onClick={() => scrollToSection("download")} className="cta text-sm px-6 py-2">Install</button>
             </div>
           </div>
         </nav>
@@ -250,48 +251,86 @@ function Index() {
         {/* Download Section */}
         <section id="download" className="py-24 px-6 bg-muted/30">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl font-display font-bold mb-4">Download AISS</h2>
+            <h2 className="text-4xl font-display font-bold mb-4">Install AISS</h2>
             <p className="text-xl text-muted-foreground mb-8">
-              Choose your platform and get started today
+              Clone the repository and install using Node.js
             </p>
             
-            <div className="glass p-8 rounded-2xl max-w-md mx-auto">
+            <div className="glass p-8 rounded-2xl max-w-3xl mx-auto text-left">
               <div className="mb-6">
                 <span className="text-sm text-muted-foreground">Detected OS: <span className="text-foreground font-semibold">{os}</span></span>
               </div>
-              {os === "Windows" ? (
-                <a
-                  href="/AISS-Setup.exe"
-                  download="AISS-Setup.exe"
-                  className="cta text-xl px-10 py-5 inline-flex items-center gap-3 w-full justify-center"
-                >
-                  <i className="fa-solid fa-download"></i>
-                  Download for Windows
-                </a>
-              ) : os === "macOS" ? (
-                <div className="text-muted-foreground">
-                  <p className="mb-4">macOS version coming soon</p>
-                  <a href="https://github.com" className="text-primary hover:underline">View on GitHub →</a>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-black text-sm font-bold">1</span>
+                    Clone the Repository
+                  </h3>
+                  <div className="bg-accent p-4 rounded-lg">
+                    <code className="text-sm">git clone https://github.com/Ahmadjamil888/active-inference-defense.git</code>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText('git clone https://github.com/Ahmadjamil888/active-inference-defense.git')}
+                      className="ml-3 text-xs pill-dark px-3 py-1"
+                    >
+                      Copy
+                    </button>
+                  </div>
                 </div>
-              ) : os === "Linux" ? (
-                <div className="text-muted-foreground">
-                  <p className="mb-4">Linux version available via package manager</p>
-                  <a href="https://github.com" className="text-primary hover:underline">View on GitHub →</a>
+                
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-black text-sm font-bold">2</span>
+                    Navigate to Agent Directory
+                  </h3>
+                  <div className="bg-accent p-4 rounded-lg">
+                    <code className="text-sm">cd active-inference-defense/agent</code>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText('cd active-inference-defense/agent')}
+                      className="ml-3 text-xs pill-dark px-3 py-1"
+                    >
+                      Copy
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <a
-                  href="/AISS-Setup.exe"
-                  download="AISS-Setup.exe"
-                  className="cta text-xl px-10 py-5 inline-flex items-center gap-3 w-full justify-center"
-                >
-                  <i className="fa-solid fa-download"></i>
-                  Download Installer
-                </a>
-              )}
-              <div className="mt-6 space-y-2 text-sm text-muted-foreground">
-                <p>v1.0.0 · 45 MB</p>
-                <p>Requires Administrator rights</p>
-                <p>Windows 10/11 (64-bit)</p>
+                
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-black text-sm font-bold">3</span>
+                    Install Globally
+                  </h3>
+                  <div className="bg-accent p-4 rounded-lg">
+                    <code className="text-sm">npm install -g .</code>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText('npm install -g .')}
+                      className="ml-3 text-xs pill-dark px-3 py-1"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-black text-sm font-bold">4</span>
+                    Start AISS
+                  </h3>
+                  <div className="bg-accent p-4 rounded-lg">
+                    <code className="text-sm">aiss</code>
+                    <button 
+                      onClick={() => navigator.clipboard.writeText('aiss')}
+                      className="ml-3 text-xs pill-dark px-3 py-1"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <p className="text-sm text-foreground">
+                  <strong>Requirements:</strong> Node.js 18+ · Administrator rights (for Windows Service)
+                </p>
               </div>
             </div>
           </div>
@@ -308,9 +347,8 @@ function Index() {
                 <span className="font-display font-bold text-xl">AISS</span>
               </div>
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                <a href="https://github.com" className="hover:text-foreground transition-colors">GitHub</a>
+                <a href="https://github.com/Ahmadjamil888/active-inference-defense" className="hover:text-foreground transition-colors">GitHub</a>
                 <a href="/docs" className="hover:text-foreground transition-colors">Documentation</a>
-                <a href="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</a>
               </div>
               <div className="text-sm text-muted-foreground">
                 AISS v1.0.0 · MIT License

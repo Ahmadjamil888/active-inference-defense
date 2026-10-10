@@ -23,43 +23,38 @@ AISS is a local-first, agentic AI security system that monitors your computer in
 - **OS**: Windows 10/11 (64-bit), macOS 12+, or Linux (Ubuntu 20.04+)
 - **RAM**: 4 GB minimum, 8 GB recommended
 - **Disk**: 500 MB free space
-- **Node.js**: 18+ (for development only)
-- **Privileges**: Administrator/root required for installation and enforcement features
+- **Node.js**: 18+ required
+- **Git**: Required for cloning the repository
+- **Privileges**: Administrator/root required for Windows Service installation
 
 ## 🚀 Installation
 
-### Windows
-
-1. Download `AISS-Setup.exe` from the website
-2. Run the installer as Administrator
-3. Follow the wizard:
-   - Accept the license agreement
-   - Choose installation location (default: `%LOCALAPPDATA%\Programs\AISS`)
-   - Select tasks:
-     - ✅ Add 'aiss' command to PATH (recommended)
-     - ✅ Create desktop shortcut
-     - ✅ Install as Windows Service (auto-start on boot)
-4. Click Install and wait for completion
-5. Open a NEW Command Prompt and type:
-   ```bash
-   aiss
-   ```
-
-The dashboard will automatically open at http://127.0.0.1:8179
-
-### macOS / Linux
+### Step 1: Clone the Repository
 
 ```bash
-# Clone the repository
-git clone https://github.com/your-repo/aiss.git
-cd aiss/agent
+git clone https://github.com/Ahmadjamil888/active-inference-defense.git
+cd active-inference-defense
+```
 
-# Install globally
+### Step 2: Navigate to Agent Directory
+
+```bash
+cd agent
+```
+
+### Step 3: Install Globally
+
+```bash
 npm install -g .
+```
 
-# Start AISS
+### Step 4: Start AISS
+
+```bash
 aiss
 ```
+
+The dashboard will automatically open at http://127.0.0.1:8179
 
 ## 💻 CLI Commands
 
@@ -156,14 +151,14 @@ Settings are stored in `~/.aiss/db.json` and can be configured via the dashboard
 
 ## 🧪 Testing
 
-Run the test USB simulation:
+Run a scan to see real data:
 
 ```bash
 aiss
-# Then in the dashboard, click "Inject Corrupted USB"
+# Then in the dashboard, click "Quick Scan" or "Deep Scan"
 ```
 
-This creates a test folder with EICAR test file and malicious patterns to demonstrate detection.
+This will scan your Downloads folder and generate real security data.
 
 ## 🐛 Troubleshooting
 
@@ -189,8 +184,8 @@ This creates a test folder with EICAR test file and malicious patterns to demons
 
 ## 📁 File Locations
 
-- **Windows**: `%LOCALAPPDATA%\Programs\AISS`
-- **macOS/Linux**: `~/.aiss`
+- **Repository Root**: Where you cloned the repo
+- **Agent Directory**: `agent/` (contains CLI and dashboard)
 - **Database**: `~/.aiss/db.json`
 - **Logs**: `~/.aiss/aiss.log`
 - **Quarantine**: `~/.aiss/quarantine/`
