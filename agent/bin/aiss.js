@@ -2,6 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { load, HOME, save } from "../src/store.js";
 
@@ -148,7 +149,8 @@ async function start(foreground) {
   } else {
     await step("Starting background engine", async () => {
       const out = fs.openSync(LOG, "a");
-      spawn(process.execPath, [new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"), "__daemon"], {
+      const scriptPath = fileURLToPath(import.meta.url);
+      spawn(process.execPath, [scriptPath, "__daemon"], {
         detached: true,
         stdio: ["ignore", out, out],
         windowsHide: true,

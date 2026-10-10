@@ -67,7 +67,7 @@ function emit(type, payload) {
 }
 
 // Health check and recovery
-export function performHealthCheck(service) {
+export async function performHealthCheck(service) {
   const now = new Date().toISOString();
   try {
     if (service === "sensors") {
@@ -242,12 +242,51 @@ async function tick() {
   }
   for (const m of [...knownVolumes]) if (!vols.some((v) => v.mount === m)) knownVolumes.delete(m);
 
+  // Periodic enhanced data collection (every 60 ticks ~ 4 minutes)
+  if (ticks % 60 === 0) {
+    try {
+      const [wifi, devices, files, sysLogs] = await Promise.all([
+        S.wifiNetworks(),
+        S.networkDevices(),
+        S.recentFiles(50),
+        S.systemLogs()
+      ]);
+      
+      // Log significant network changes
+      if (wifi.length > 0) {
+        const connected = wifi.filter(w => w.connected);
+        if (connected.length > 0) {
+          log("info", "network", `Connected to WiFi: ${connected[0].ssid}`, null);
+        }
+      }
+      
+      if (devices.length > 0) {
+        log("info", "network", `Detected ${devices.length} network devices on LAN`, null);
+      }
+      
+      // Log suspicious file activity
+      const suspiciousExts = ['.exe', '.msi', '.bat', '.sh', '.ps1', '.vbs'];
+      const suspiciousFiles = files.filter(f => suspiciousExts.includes(f.extension));
+      if (suspiciousFiles.length > 0) {
+        log("warn", "file", `Detected ${suspiciousFiles.length} suspicious executables in recent files`, null);
+      }
+      
+      // Log system errors
+      const errorLogs = sysLogs.filter(l => l.level === 'error');
+      if (errorLogs.length > 0) {
+        log("warn", "system", `${errorLogs.length} system errors in recent logs`, null);
+      }
+    } catch (e) {
+      log("error", "sensor", `Enhanced data collection failed: ${e.message}`, null);
+    }
+  }
+
   // Periodic health checks (every 30 ticks ~ 2 minutes)
   if (ticks % 30 === 0) {
-    performHealthCheck("sensors");
-    performHealthCheck("scanner");
-    performHealthCheck("database");
-    performHealthCheck("network");
+    await performHealthCheck("sensors");
+    await performHealthCheck("scanner");
+    await performHealthCheck("database");
+    await performHealthCheck("network");
   }
 }
 

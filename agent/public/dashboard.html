@@ -293,6 +293,12 @@ input{font-family:inherit;font-size:inherit}
       <div class="nav-item" data-page="health">
         <span class="nav-icon">♡</span><span class="nav-label">Health</span>
       </div>
+      <div class="nav-item" data-page="wifi">
+        <span class="nav-icon">📡</span><span class="nav-label">WiFi</span>
+      </div>
+      <div class="nav-item" data-page="files">
+        <span class="nav-icon">📁</span><span class="nav-label">Files</span>
+      </div>
     </div>
     <div class="sb-profile">
       <div class="sb-avatar" id="sb-initial">A</div>
@@ -512,6 +518,36 @@ input{font-family:inherit;font-size:inherit}
         </div>
       </div>
 
+      <!-- ===== WIFI ===== -->
+      <div class="tab-pane" id="page-wifi">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">WiFi Networks</h2>
+        <div class="card p20">
+          <div class="card-title">Nearby Networks</div>
+          <div id="wifi-list" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">Network Devices</div>
+          <div id="network-devices" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">Network Logs</div>
+          <div id="network-logs" class="logbox" style="max-height:300px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- ===== FILES ===== -->
+      <div class="tab-pane" id="page-files">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Recent Files</h2>
+        <div class="card p20">
+          <div class="card-title">Recent Activity</div>
+          <div id="recent-files" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">System Logs</div>
+          <div id="system-logs" class="logbox" style="max-height:300px;overflow-y:auto"></div>
+        </div>
+      </div>
+
     </div><!-- /content -->
   </div><!-- /main -->
 </div><!-- /app -->
@@ -650,6 +686,8 @@ function showPage(name) {
   if (name === 'reports') loadReportSummary();
   if (name === 'settings') loadSettings();
   if (name === 'health') loadHealthDetail();
+  if (name === 'wifi') loadWifiPage();
+  if (name === 'files') loadFilesPage();
   // mobile
   document.getElementById('overlay').classList.remove('show');
   document.getElementById('sidebar').classList.remove('mobile-open');
@@ -1331,6 +1369,130 @@ async function removeAllowlist(i) {
   await saveSettings();
   loadSettings();
   toast('Removed from allowlist', 'info');
+}
+
+// ─── WIFI & NETWORK PAGE ─────────────────────────────────────────────────
+async function loadWifiPage() {
+  try {
+    const [wifi, devices, logs] = await Promise.all([
+      api('/api/wifi'),
+      api('/api/network-devices'),
+      api('/api/network-logs')
+    ]);
+    
+    // WiFi Networks
+    const wifiList = document.getElementById('wifi-list');
+    if (wifi && wifi.length > 0) {
+      wifiList.innerHTML = wifi.map(w => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-weight:600">${escHtml(w.ssid)}</div>
+            <div style="font-size:12px;color:var(--text2)">BSSID: ${escHtml(w.bssid)}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:12px">${w.signal}%</div>
+            <div style="width:60px;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden">
+              <div style="width:${w.signal}%;height:100%;background:${w.connected ? 'var(--green)' : 'var(--accent)'}"></div>
+            </div>
+            ${w.connected ? '<span style="font-size:11px;color:var(--green)">● Connected</span>' : ''}
+          </div>
+        </div>`).join('');
+    } else {
+      wifiList.innerHTML = '<div class="empty"><div class="empty-text">No WiFi networks detected</div></div>';
+    }
+    
+    // Network Devices
+    const devicesList = document.getElementById('network-devices');
+    if (devices && devices.length > 0) {
+      devicesList.innerHTML = devices.map(d => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-weight:600">${escHtml(d.ip)}</div>
+            <div style="font-size:12px;color:var(--text2)">MAC: ${escHtml(d.mac)}</div>
+          </div>
+          <span style="font-size:12px;padding:4px 8px;background:var(--bg3);border-radius:4px">${escHtml(d.type)}</span>
+        </div>`).join('');
+    } else {
+      devicesList.innerHTML = '<div class="empty"><div class="empty-text">No network devices detected</div></div>';
+    }
+    
+    // Network Logs
+    const logsList = document.getElementById('network-logs');
+    if (logs && logs.length > 0) {
+      logsList.innerHTML = logs.map(l => `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;font-family:monospace">
+          <span style="color:var(--accent)">[${l.time}]</span> ${escHtml(l.message)}
+        </div>`).join('');
+    } else {
+      logsList.innerHTML = '<div class="empty"><div class="empty-text">No network logs available</div></div>';
+    }
+  } catch(e) {
+    document.getElementById('wifi-list').innerHTML = `<div class="empty"><div class="empty-text">Failed to load: ${escHtml(e.message)}</div></div>`;
+  }
+}
+
+// ─── FILES PAGE ─────────────────────────────────────────────────────────
+async function loadFilesPage() {
+  try {
+    const [files, logs] = await Promise.all([
+      api('/api/recent-files'),
+      api('/api/system-logs')
+    ]);
+    
+    // Recent Files
+    const filesList = document.getElementById('recent-files');
+    if (files && files.length > 0) {
+      filesList.innerHTML = files.map(f => `
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:12px">
+            <span style="font-size:20px">${getFileIcon(f.extension)}</span>
+            <div>
+              <div style="font-weight:600">${escHtml(f.name)}</div>
+              <div style="font-size:12px;color:var(--text2)">${escHtml(f.path)}</div>
+            </div>
+          </div>
+          <div style="text-align:right;font-size:12px;color:var(--text2)">
+            <div>${formatBytes(f.size)}</div>
+            <div>${fmtTs(f.modified)}</div>
+          </div>
+        </div>`).join('');
+    } else {
+      filesList.innerHTML = '<div class="empty"><div class="empty-text">No recent files detected</div></div>';
+    }
+    
+    // System Logs
+    const sysLogs = document.getElementById('system-logs');
+    if (logs && logs.length > 0) {
+      sysLogs.innerHTML = logs.map(l => `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;font-family:monospace">
+          <span style="color:${l.level === 'error' ? 'var(--red)' : 'var(--accent)'}">[${l.time}]</span> 
+          <span style="color:var(--text2)">${l.source}:</span> ${escHtml(l.message)}
+        </div>`).join('');
+    } else {
+      sysLogs.innerHTML = '<div class="empty"><div class="empty-text">No system logs available</div></div>';
+    }
+  } catch(e) {
+    document.getElementById('recent-files').innerHTML = `<div class="empty"><div class="empty-text">Failed to load: ${escHtml(e.message)}</div></div>`;
+  }
+}
+
+function getFileIcon(ext) {
+  const icons = {
+    '.exe': '⚙', '.msi': '⚙', '.zip': '📦', '.rar': '📦', '.7z': '📦',
+    '.pdf': '📄', '.doc': '📝', '.docx': '📝', '.txt': '📝',
+    '.jpg': '🖼', '.jpeg': '🖼', '.png': '🖼', '.gif': '🖼',
+    '.mp3': '🎵', '.mp4': '🎬', '.avi': '🎬', '.mkv': '🎬',
+    '.js': '📜', '.py': '🐍', '.sh': '⌨', '.bat': '⌨'
+  };
+  return icons[ext.toLowerCase()] || '📄';
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 async function saveSettings() {
   try {

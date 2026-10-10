@@ -68,6 +68,56 @@ export function serve(port, token) {
       if (p === "/api/volumes") return json(res, 200, await S.volumes());
       if (p === "/api/disks") return json(res, 200, await S.disks());
       
+      // Enhanced network APIs
+      if (p === "/api/wifi") return json(res, 200, await S.wifiNetworks());
+      if (p === "/api/network-devices") return json(res, 200, await S.networkDevices());
+      if (p === "/api/network-logs") return json(res, 200, await S.networkLogs());
+      if (p === "/api/recent-files") return json(res, 200, await S.recentFiles(100));
+      if (p === "/api/system-logs") return json(res, 200, await S.systemLogs());
+      
+      // Enhanced system APIs
+      if (p === "/api/all-processes") return json(res, 200, await S.allProcesses());
+      if (p === "/api/all-connections") return json(res, 200, await S.allConnections());
+      if (p === "/api/system-info") return json(res, 200, await S.systemInfo());
+      if (p === "/api/all-services") return json(res, 200, await S.allServices());
+      if (p === "/api/running-services") return json(res, 200, await S.runningServices());
+      if (p === "/api/installed-software") return json(res, 200, await S.installedSoftware());
+      if (p === "/api/open-ports") return json(res, 200, await S.openPorts());
+      if (p === "/api/hardware") return json(res, 200, await S.systemHardware());
+      
+      // Export APIs
+      if (p === "/api/export") {
+        const d = E.state();
+        const exportData = {
+          system: await S.systemInfo(),
+          hardware: await S.systemHardware(),
+          processes: await S.allProcesses(),
+          connections: await S.allConnections(),
+          services: await S.allServices(),
+          wifi: await S.wifiNetworks(),
+          devices: await S.networkDevices(),
+          files: await S.recentFiles(200),
+          logs: await S.systemLogs(),
+          threats: d.threats,
+          incidents: d.incidents,
+          scans: d.scans,
+          metrics: d.metrics,
+          exportedAt: new Date().toISOString()
+        };
+        res.setHeader("content-type", "application/json");
+        res.setHeader("content-disposition", `attachment; filename="aiss-export-${Date.now()}.json"`);
+        return res.end(JSON.stringify(exportData, null, 2));
+      }
+      
+      // Attack simulation APIs
+      if (p === "/api/simulate/attack" && req.method === "POST") {
+        const b = await body(req);
+        const attackType = b.type;
+        const results = await simulateAttack(attackType, b.params);
+        E.log("warn", "simulation", `Attack simulation: ${attackType}`, { results });
+        return json(res, 200, results);
+      }
+      
       // Alerts API
       if (p === "/api/alerts") {
         const state = E.state();
