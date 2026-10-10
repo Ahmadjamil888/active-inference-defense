@@ -240,23 +240,43 @@ export async function wifiNetworks() {
 
     // Then, get nearby networks
     if (isWin) {
-      const { stdout } = await run("netsh", ["wlan", "show", "networks", "mode=bssid"]);
-      const networks = [];
-      let currentNetwork = null;
-      stdout.split("\n").forEach(line => {
-        line = line.trim();
-        if (line.startsWith("SSID")) {
-          const ssid = line.split(":").slice(1).join(":").trim();
-          currentNetwork = { ssid, bssid: "", signal: 0, connected: ssid === connectedSsid };
-          networks.push(currentNetwork);
-        } else if (line.startsWith("BSSID") && currentNetwork) {
-          currentNetwork.bssid = line.split(":").slice(1).join(":").trim();
-        } else if (line.includes("Signal") && currentNetwork) {
-          const signalMatch = line.match(/(\d+)/);
-          if (signalMatch) currentNetwork.signal = parseInt(signalMatch[1]) || 0;
+      try {
+        const { stdout } = await run("netsh", ["wlan", "show", "networks", "mode=bssid"]);
+        const networks = [];
+        let currentNetwork = null;
+        stdout.split("\n").forEach(line => {
+          line = line.trim();
+          if (line.startsWith("SSID")) {
+            const ssid = line.split(":").slice(1).join(":").trim();
+            currentNetwork = { ssid, bssid: "", signal: 0, connected: ssid === connectedSsid };
+            networks.push(currentNetwork);
+          } else if (line.startsWith("BSSID") && currentNetwork) {
+            currentNetwork.bssid = line.split(":").slice(1).join(":").trim();
+          } else if (line.includes("Signal") && currentNetwork) {
+            const signalMatch = line.match(/(\d+)/);
+            if (signalMatch) currentNetwork.signal = parseInt(signalMatch[1]) || 0;
+          }
+        });
+        return networks;
+      } catch (e) {
+        // Fall back to basic scan without bssid mode
+        try {
+          const { stdout } = await run("netsh", ["wlan", "show", "networks"]);
+          const networks = [];
+          stdout.split("\n").forEach(line => {
+            line = line.trim();
+            if (line.startsWith("SSID")) {
+              const ssid = line.split(":").slice(1).join(":").trim();
+              if (ssid) {
+                networks.push({ ssid, bssid: "", signal: 0, connected: ssid === connectedSsid });
+              }
+            }
+          });
+          return networks;
+        } catch {
+          return [];
         }
-      });
-      return networks;
+      }
     } else if (isMac) {
       const { stdout } = await run("/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", ["-s"]);
       return stdout.split("\n").slice(1).filter(Boolean).map(line => {

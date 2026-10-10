@@ -2706,11 +2706,11 @@ const BASE = process.env.AISS_CLOUD || "https://active-inference-defense.lovable
 
 ### Prerequisites
 
-- Node.js 18 or higher
 - Git
 - Administrator/root access (for Windows Service installation)
 - 500 MB free disk space
 - 4 GB RAM minimum (8 GB recommended)
+- **Node.js 18 or higher will be auto-installed if not present**
 
 ### Step-by-Step Installation
 
@@ -2727,25 +2727,39 @@ cd active-inference-defense
 cd agent
 ```
 
-#### 3. Install Dependencies
+#### 3. Install Dependencies (Auto-installs Node.js if needed)
 
+**Windows:**
 ```bash
-npm install
+# The installer will automatically detect and install Node.js if not present
+# Just run the setup file from the installer/ directory
+cd ..\installer
+.\AISS-Setup.exe
 ```
 
-#### 4. Install Globally
-
+**Or manual installation:**
 ```bash
+# Check if Node.js is installed
+node --version
+
+# If not installed, install Node.js:
+# Windows: Download from https://nodejs.org/
+# Linux: curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+#         sudo apt-get install -y nodejs
+# macOS: brew install node
+
+# Then proceed with installation
+npm install
 npm install -g .
 ```
 
-This installs the `aiss` command globally on your system.
-
-#### 5. Start AISS
+#### 4. Start AISS
 
 ```bash
 aiss
 ```
+
+The AISS installer includes automatic Node.js detection and installation on Windows. If Node.js is not found, it will prompt to install it automatically.
 
 The dashboard will automatically open at http://127.0.0.1:8179
 
