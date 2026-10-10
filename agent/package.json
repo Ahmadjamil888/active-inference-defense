@@ -1,0 +1,10 @@
+{
+  "name": "aiss",
+  "version": "1.0.0",
+  "description": "AISS — Agentic AI Security System local monitoring agent",
+  "type": "module",
+  "bin": { "aiss": "./bin/aiss.js" },
+  "engines": { "node": ">=18" },
+  "files": ["bin", "src", "public"],
+  "license": "MIT"
+}
