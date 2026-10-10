@@ -1646,7 +1646,7 @@ async function runEicarTest() {
   resultDiv.innerHTML = '<div style="color:var(--text2)">Generating EICAR test file...</div>';
 
   try {
-    const res = await api('/api/test/eicar', { method: 'POST' });
+    const res = await api('/api/test/eicar', 'POST');
     if (res.success) {
       resultDiv.innerHTML = `<div style="color:var(--green)">✓ EICAR test file generated at ${escHtml(res.path)}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">AISS should detect and quarantine this file within the next scan cycle.</div>`;
     } else {
@@ -1662,7 +1662,7 @@ async function runSyntheticTest() {
   resultDiv.innerHTML = '<div style="color:var(--text2)">Generating synthetic threat event...</div>';
 
   try {
-    const res = await api('/api/test/synthetic', { method: 'POST' });
+    const res = await api('/api/test/synthetic', 'POST');
     if (res.success) {
       resultDiv.innerHTML = `<div style="color:var(--green)">✓ Synthetic threat generated (score: ${res.score}, decision: ${res.decision})</div><div style="font-size:12px;color:var(--text2);margin-top:4px">Check the Threats page for details.</div>`;
     } else {
@@ -1678,7 +1678,7 @@ async function runAnomalyTest() {
   resultDiv.innerHTML = '<div style="color:var(--text2)">Simulating baseline anomaly...</div>';
 
   try {
-    const res = await api('/api/test/anomaly', { method: 'POST' });
+    const res = await api('/api/test/anomaly', 'POST');
     if (res.success) {
       resultDiv.innerHTML = `<div style="color:var(--green)">✓ Anomaly simulation triggered (z-score: ${res.zScore.toFixed(2)})</div><div style="font-size:12px;color:var(--text2);margin-top:4px">Check the Alerts page for warnings.</div>`;
     } else {

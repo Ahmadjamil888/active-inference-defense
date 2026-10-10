@@ -4,7 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 import * as S from "./sensors.js";
 import { scanPath, inspect, quarantine } from "./scanner.js";
-import { push, data, setSetting, HOME } from "./store.js";
+import { push, data, setSetting, HOME, load } from "./store.js";
 import { analyze } from "./ai.js";
 
 const QUARANTINE = path.join(HOME, "quarantine");
@@ -98,7 +98,6 @@ export async function performHealthCheck(service) {
       log("warn", "health", `Attempting recovery for ${service}`, null);
       try {
         if (service === "database") {
-          const { load } = await import("./store.js");
           load(); // Reload database
           healthChecks.database = { status: "ok", lastCheck: now, errorCount: 0 };
           log("info", "health", `Database recovered`, null);
