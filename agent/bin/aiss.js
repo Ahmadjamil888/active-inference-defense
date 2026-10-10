@@ -10,6 +10,7 @@ const PORT = Number(process.env.AISS_PORT || 8179);
 const PID = path.join(HOME, "aiss.pid");
 const TOKEN_FILE = path.join(HOME, "token");
 const LOG = path.join(HOME, "aiss.log");
+const BROWSER_LOCK = path.join(HOME, "browser.lock");
 const cmd = process.argv[2] || "start";
 
 const c = (n) => (s) => `\x1b[${n}m${s}\x1b[0m`;
@@ -57,10 +58,20 @@ function runningPid() {
 }
 
 function openBrowser(url) {
+  try {
+    const lockContent = fs.readFileSync(BROWSER_LOCK, "utf8");
+    const lockTime = Number(lockContent);
+    const now = Date.now();
+    if (now - lockTime < 3000) {
+      return;
+    }
+  } catch {}
+
   const p = process.platform;
   const args = p === "win32" ? ["cmd", ["/c", "start", "", url]] : p === "darwin" ? ["open", [url]] : ["xdg-open", [url]];
   try {
     spawn(args[0], args[1], { detached: true, stdio: "ignore" }).unref();
+    fs.writeFileSync(BROWSER_LOCK, String(Date.now()));
   } catch {
     /* no browser */
   }
@@ -115,6 +126,7 @@ async function daemon() {
   const bye = () => {
     save();
     try { fs.unlinkSync(PID); } catch {}
+    try { fs.unlinkSync(BROWSER_LOCK); } catch {}
     process.exit(0);
   };
   process.on("SIGINT", bye);
@@ -134,6 +146,15 @@ async function start(foreground) {
     console.log(`    ${cyan("aiss logs")}  - View logs`);
     console.log(`    ${cyan("aiss open")}  - Open dashboard`);
     console.log("");
+    await step("Checking dashboard availability", async () => {
+      for (let i = 0; i < 10; i++) {
+        try {
+          const r = await fetch(url);
+          if (r.ok) return;
+        } catch {}
+        await sleep(300);
+      }
+    });
     openBrowser(url);
     return;
   }
@@ -306,9 +327,28 @@ switch (cmd) {
     }
     break;
   }
-  case "open":
-    openBrowser(`http://127.0.0.1:${PORT}/`);
+  case "open": {
+    const url = `http://127.0.0.1:${PORT}/`;
+    if (!runningPid()) {
+      console.log("");
+      console.log(`${red("✗")} ${white("AISS is not running")}`);
+      console.log("");
+      console.log(`${blue("ℹ")}  ${white("Start AISS with:")} ${cyan("aiss")}`);
+      console.log("");
+      break;
+    }
+    await step("Checking dashboard availability", async () => {
+      for (let i = 0; i < 10; i++) {
+        try {
+          const r = await fetch(url);
+          if (r.ok) return;
+        } catch {}
+        await sleep(300);
+      }
+    });
+    openBrowser(url);
     break;
+  }
   case "logs":
     try {
       console.log(fs.readFileSync(LOG, "utf8").split("\n").slice(-60).join("\n"));
