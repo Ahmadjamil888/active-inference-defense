@@ -190,6 +190,44 @@ export function host() {
 
 export async function wifiNetworks() {
   try {
+    let connectedSsid = null;
+    let connectedBssid = null;
+
+    // First, get the connected network
+    if (isWin) {
+      try {
+        const { stdout: connStdout } = await run("netsh", ["wlan", "show", "interfaces"]);
+        const match = connStdout.match(/SSID\s*:\s*(.+)/i);
+        if (match) connectedSsid = match[1].trim();
+        const bssidMatch = connStdout.match(/BSSID\s*:\s*(.+)/i);
+        if (bssidMatch) connectedBssid = bssidMatch[1].trim();
+      } catch {
+        // Continue without connected info
+      }
+    } else if (isMac) {
+      try {
+        const { stdout: connStdout } = await run("/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", ["-I"]);
+        const ssidMatch = connStdout.match(/SSID:\s*(.+)/i);
+        if (ssidMatch) connectedSsid = ssidMatch[1].trim();
+        const bssidMatch = connStdout.match(/BSSID:\s*(.+)/i);
+        if (bssidMatch) connectedBssid = bssidMatch[1].trim();
+      } catch {
+        // Continue without connected info
+      }
+    } else {
+      try {
+        const { stdout: connStdout } = await run("nmcli", ["-t", "-f", "active,ssid,bssid", "dev", "wifi"]);
+        const parts = connStdout.split(":");
+        if (parts[0] === "yes") {
+          connectedSsid = parts[1];
+          connectedBssid = parts[2];
+        }
+      } catch {
+        // Continue without connected info
+      }
+    }
+
+    // Then, get nearby networks
     if (isWin) {
       const { stdout } = await run("netsh", ["wlan", "show", "networks", "mode=bssid"]);
       const networks = [];
@@ -197,30 +235,64 @@ export async function wifiNetworks() {
       stdout.split("\n").forEach(line => {
         line = line.trim();
         if (line.startsWith("SSID")) {
-          currentNetwork = { ssid: line.split(":")[1].trim(), bssid: "", signal: 0, connected: false };
+          const ssid = line.split(":").slice(1).join(":").trim();
+          currentNetwork = { ssid, bssid: "", signal: 0, connected: ssid === connectedSsid };
           networks.push(currentNetwork);
         } else if (line.startsWith("BSSID") && currentNetwork) {
-          currentNetwork.bssid = line.split(":")[1].trim();
-        } else if (line.startsWith("Signal") && currentNetwork) {
-          currentNetwork.signal = parseInt(line.split(":")[1].trim()) || 0;
+          currentNetwork.bssid = line.split(":").slice(1).join(":").trim();
+        } else if (line.includes("Signal") && currentNetwork) {
+          const signalMatch = line.match(/(\d+)/);
+          if (signalMatch) currentNetwork.signal = parseInt(signalMatch[1]) || 0;
         }
       });
       return networks;
     } else if (isMac) {
       const { stdout } = await run("/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport", ["-s"]);
-      return stdout.split("\n").slice(1).map(line => {
+      return stdout.split("\n").slice(1).filter(Boolean).map(line => {
         const parts = line.trim().split(/\s+/);
-        return { ssid: parts[0], bssid: parts[1], signal: parseInt(parts[2]) || 0, connected: parts[3] === "*" };
+        const ssid = parts[0];
+        const bssid = parts[1];
+        const signal = parseInt(parts[2]) || 0;
+        return { ssid, bssid, signal, connected: ssid === connectedSsid && bssid === connectedBssid };
       });
     } else {
-      const { stdout } = await run("nmcli", ["-t", "dev", "wifi"]);
-      return stdout.split("\n").filter(Boolean).map(line => {
-        const parts = line.split(":");
-        return { ssid: parts[1], bssid: parts[3], signal: parseInt(parts[2]) || 0, connected: parts[4] === "*" };
-      });
+      try {
+        const { stdout } = await run("nmcli", ["-t", "-f", "ssid,bssid,signal,active", "dev", "wifi"]);
+        return stdout.split("\n").filter(Boolean).map(line => {
+          const parts = line.split(":");
+          const ssid = parts[0];
+          const bssid = parts[1];
+          const signal = parseInt(parts[2]) || 0;
+          const connected = parts[3] === "yes";
+          return { ssid, bssid, signal, connected };
+        });
+      } catch {
+        // Fallback to iwlist if nmcli fails
+        try {
+          const { stdout } = await run("iwlist", ["scan"]);
+          const networks = [];
+          const cells = stdout.split(/Cell \d+/);
+          for (const cell of cells) {
+            const ssidMatch = cell.match(/ESSID:"([^"]+)"/);
+            const bssidMatch = cell.match(/Address: ([0-9A-F:]+)/i);
+            const signalMatch = cell.match(/Signal level=(-?\d+) dBm/);
+            if (ssidMatch) {
+              networks.push({
+                ssid: ssidMatch[1],
+                bssid: bssidMatch ? bssidMatch[1] : "",
+                signal: signalMatch ? Math.max(0, 100 + parseInt(signalMatch[1])) : 0,
+                connected: false
+              });
+            }
+          }
+          return networks;
+        } catch {
+          return [];
+        }
+      }
     }
-  } catch {
-    return [];
+  } catch (error) {
+    return { error: error.message || "WiFi enumeration failed" };
   }
 }
 
@@ -245,6 +317,114 @@ export async function networkDevices() {
     }
   } catch {
     return [];
+  }
+}
+
+export async function hardware() {
+  try {
+    const info = {
+      cpu: {
+        model: os.cpus()[0]?.model || "unknown",
+        cores: os.cpus().length,
+        architecture: os.arch(),
+        speed: os.cpus()[0]?.speed || 0
+      },
+      memory: {
+        total: os.totalmem(),
+        free: os.freemem(),
+        used: os.totalmem() - os.freemem()
+      },
+      platform: {
+        type: os.type(),
+        release: os.release(),
+        hostname: os.hostname(),
+        uptime: os.uptime()
+      },
+      storage: await disks(),
+      networkAdapters: Object.entries(os.networkInterfaces()).map(([name, addrs]) => ({
+        name,
+        addresses: addrs.map(a => ({
+          address: a.address,
+          netmask: a.netmask,
+          family: a.family,
+          internal: a.internal,
+          mac: a.mac
+        }))
+      })),
+      usb: []
+    };
+
+    // USB device detection
+    if (isWin) {
+      try {
+        const { stdout } = await run("powershell", [
+          "-NoProfile",
+          "-Command",
+          "Get-PnpDevice -Class USB | Where-Object Status -eq 'OK' | Select-Object FriendlyName,InstanceId | ConvertTo-Json -Compress"
+        ]);
+        const parsed = JSON.parse(stdout || "[]");
+        info.usb = (Array.isArray(parsed) ? parsed : [parsed]).map(d => ({
+          name: d.FriendlyName || "Unknown USB Device",
+          id: d.InstanceId || ""
+        }));
+      } catch {
+        info.usb = [];
+      }
+    } else if (isMac) {
+      try {
+        const { stdout } = await run("system_profiler", ["SPUSBDataType", "-json"]);
+        const parsed = JSON.parse(stdout || "{}");
+        const extractUsb = (obj) => {
+          const devices = [];
+          if (obj._items) {
+            for (const item of obj._items) {
+              if (item._name) {
+                devices.push({ name: item._name, id: item._serial || "" });
+              }
+              if (item._items) {
+                devices.push(...extractUsb(item));
+              }
+            }
+          }
+          return devices;
+        };
+        info.usb = extractUsb(parsed);
+      } catch {
+        info.usb = [];
+      }
+    } else {
+      try {
+        const { stdout } = await run("lsusb", []);
+        info.usb = stdout.split("\n").filter(Boolean).map(line => {
+          const match = line.match(/.*: (.*)$/);
+          return { name: match ? match[1] : line, id: "" };
+        });
+      } catch {
+        info.usb = [];
+      }
+    }
+
+    // GPU detection (Windows only via WMI)
+    if (isWin) {
+      try {
+        const { stdout } = await run("powershell", [
+          "-NoProfile",
+          "-Command",
+          "Get-WmiObject Win32_VideoController | Select-Object Name,AdapterRAM | ConvertTo-Json -Compress"
+        ]);
+        const parsed = JSON.parse(stdout || "[]");
+        info.gpu = (Array.isArray(parsed) ? parsed : [parsed]).map(g => ({
+          name: g.Name || "Unknown GPU",
+          memory: Number(g.AdapterRAM) || 0
+        }));
+      } catch {
+        info.gpu = [];
+      }
+    }
+
+    return info;
+  } catch (error) {
+    return { error: error.message || "Hardware enumeration failed" };
   }
 }
 

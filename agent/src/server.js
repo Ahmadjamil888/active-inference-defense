@@ -83,14 +83,14 @@ export function serve(port, token) {
       if (p === "/api/running-services") return json(res, 200, await S.runningServices());
       if (p === "/api/installed-software") return json(res, 200, await S.installedSoftware());
       if (p === "/api/open-ports") return json(res, 200, await S.openPorts());
-      if (p === "/api/hardware") return json(res, 200, await S.systemHardware());
+      if (p === "/api/hardware") return json(res, 200, await S.hardware());
       
       // Export APIs
       if (p === "/api/export") {
         const d = E.state();
         const exportData = {
           system: await S.systemInfo(),
-          hardware: await S.systemHardware(),
+          hardware: await S.hardware(),
           processes: await S.allProcesses(),
           connections: await S.allConnections(),
           services: await S.allServices(),
@@ -108,7 +108,29 @@ export function serve(port, token) {
         res.setHeader("content-disposition", `attachment; filename="aiss-export-${Date.now()}.json"`);
         return res.end(JSON.stringify(exportData, null, 2));
       }
-      
+
+      // Testing APIs
+      if (p === "/api/test/eicar" && req.method === "POST") {
+        const eicarDir = path.join(HOME, "test-eicar");
+        fs.mkdirSync(eicarDir, { recursive: true });
+        const eicarPath = path.join(eicarDir, "eicar.com");
+        fs.writeFileSync(eicarPath, EICAR);
+        E.log("info", "test", "EICAR test file generated", { path: eicarPath });
+        return json(res, 200, { success: true, path: eicarPath });
+      }
+      if (p === "/api/test/synthetic" && req.method === "POST") {
+        const b = await body(req);
+        const score = Math.floor(Math.random() * 30) + 50; // 50-80
+        const decision = score >= 70 ? "BLOCK" : score >= 45 ? "QUARANTINE" : score >= 20 ? "HOLD" : "ALLOW";
+        E.log("warn", "test", `Synthetic threat generated (score: ${score}, decision: ${decision})`, null);
+        return json(res, 200, { success: true, score, decision });
+      }
+      if (p === "/api/test/anomaly" && req.method === "POST") {
+        const zScore = 5 + Math.random() * 3; // 5-8
+        E.log("warn", "test", `Anomaly simulation triggered (z-score: ${zScore.toFixed(2)})`, null);
+        return json(res, 200, { success: true, zScore });
+      }
+
       // Attack simulation APIs
       if (p === "/api/simulate/attack" && req.method === "POST") {
         const b = await body(req);

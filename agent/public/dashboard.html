@@ -7,20 +7,20 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <style>
 :root {
-  --bg: #0d0d0f;
-  --bg2: #13131a;
-  --bg3: #1a1a24;
+  --bg: #000000;
+  --bg2: #0a0a0a;
+  --bg3: #111111;
   --border: rgba(255,255,255,0.08);
-  --accent: #00d4aa;
-  --accent2: #0099ff;
-  --text: #e8e8f0;
-  --text2: #8888a0;
-  --red: #ff4444;
+  --accent: #c81b1c;
+  --accent2: #c81b1c;
+  --text: #ffffff;
+  --text2: #949494;
+  --red: #c81b1c;
   --amber: #ffaa00;
   --green: #00cc88;
   --radius: 12px;
   --sidebar: 240px;
-  --font: 'Inter', system-ui, sans-serif;
+  --font: 'Space Grotesk', sans-serif;
 }
 [data-theme="light"] {
   --bg: #f4f4f8;
@@ -254,12 +254,17 @@ input{font-family:inherit;font-size:inherit}
   <!-- Sidebar -->
   <nav id="sidebar">
     <div class="sb-logo">
-      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <rect width="28" height="28" rx="6" fill="#00d4aa"/>
-        <path d="M7 14l4 4 10-10" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="14" cy="14" r="12" stroke="#000" stroke-width="1.5" fill="none" opacity=".3"/>
+      <svg viewBox="0 0 46 46" fill="none" style="width:32px;height:32px">
+        <path d="M23 0V19.5" stroke="#fff" stroke-width="3" stroke-linecap="butt"/>
+        <path d="M14 10.2L23 19.2L32 10.2" stroke="#fff" stroke-width="3" stroke-linecap="butt"/>
+        <path d="M23 46V26.5" stroke="#fff" stroke-width="3" stroke-linecap="butt" transform="rotate(90 23 23)"/>
+        <path d="M14 35.8L23 26.8L32 35.8" stroke="#fff" stroke-width="3" stroke-linecap="butt" transform="rotate(90 23 23)"/>
+        <path d="M23 46V26.5" stroke="#fff" stroke-width="3" stroke-linecap="butt" transform="rotate(180 23 23)"/>
+        <path d="M14 35.8L23 26.8L32 35.8" stroke="#fff" stroke-width="3" stroke-linecap="butt" transform="rotate(180 23 23)"/>
+        <path d="M23 46V26.5" stroke="#fff" stroke-width="3" stroke-linecap="butt" transform="rotate(270 23 23)"/>
+        <path d="M14 35.8L23 26.8L32 35.8" stroke="#fff" stroke-width="3" stroke-linecap="butt" transform="rotate(270 23 23)"/>
       </svg>
-      <span class="sb-wordmark"><span>AI</span><span class="wm-text">SS</span></span>
+      <span class="sb-wordmark"><span>AISS</span></span>
     </div>
     <div class="sb-nav" id="sb-nav">
       <div class="nav-item active" data-page="overview">
@@ -295,6 +300,12 @@ input{font-family:inherit;font-size:inherit}
       </div>
       <div class="nav-item" data-page="wifi">
         <span class="nav-icon">📡</span><span class="nav-label">WiFi</span>
+      </div>
+      <div class="nav-item" data-page="hardware">
+        <span class="nav-icon">🔧</span><span class="nav-label">Hardware</span>
+      </div>
+      <div class="nav-item" data-page="testing">
+        <span class="nav-icon">🧪</span><span class="nav-label">Testing</span>
       </div>
       <div class="nav-item" data-page="files">
         <span class="nav-icon">📁</span><span class="nav-label">Files</span>
@@ -535,6 +546,58 @@ input{font-family:inherit;font-size:inherit}
         </div>
       </div>
 
+      <!-- ===== HARDWARE ===== -->
+      <div class="tab-pane" id="page-hardware">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Hardware Detection</h2>
+        <div class="card p20">
+          <div class="card-title">CPU</div>
+          <div id="hw-cpu" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">Memory</div>
+          <div id="hw-memory" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">Storage</div>
+          <div id="hw-storage" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">Network Adapters</div>
+          <div id="hw-network" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">USB Devices</div>
+          <div id="hw-usb" style="margin-top:12px"></div>
+        </div>
+      </div>
+
+      <!-- ===== TESTING ===== -->
+      <div class="tab-pane" id="page-testing">
+        <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Authorized Security Testing</h2>
+        <div class="card p20">
+          <div class="card-title">EICAR Test File</div>
+          <p style="font-size:12px;color:var(--text2);margin:8px 0 12px 0">Generate the standard EICAR antivirus test file to verify detection capabilities.</p>
+          <button onclick="runEicarTest()" style="background:var(--accent);color:#000;padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px">Generate EICAR Test File</button>
+          <div id="eicar-result" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">Synthetic Threat Event</div>
+          <p style="font-size:12px;color:var(--text2);margin:8px 0 12px 0">Generate a scored threat event to test Security Gate decisions.</p>
+          <button onclick="runSyntheticTest()" style="background:var(--accent);color:#000;padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px">Generate Synthetic Threat</button>
+          <div id="synthetic-result" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">Baseline Anomaly Simulation</div>
+          <p style="font-size:12px;color:var(--text2);margin:8px 0 12px 0">Simulate anomalous CPU/memory behavior to test alerting.</p>
+          <button onclick="runAnomalyTest()" style="background:var(--accent);color:#000;padding:8px 16px;border-radius:6px;font-weight:600;font-size:13px">Simulate Anomaly</button>
+          <div id="anomaly-result" style="margin-top:12px"></div>
+        </div>
+        <div class="card p20" style="margin-top:16px">
+          <div class="card-title">Test Warning</div>
+          <p style="font-size:12px;color:var(--red);margin:8px 0">These tests are authorized, local-only simulations designed to verify detection and response mechanisms. Never use AISS for unauthorized offensive activity against third-party systems.</p>
+        </div>
+      </div>
+
       <!-- ===== FILES ===== -->
       <div class="tab-pane" id="page-files">
         <h2 style="font-size:16px;font-weight:600;margin-bottom:16px">Recent Files</h2>
@@ -687,6 +750,8 @@ function showPage(name) {
   if (name === 'settings') loadSettings();
   if (name === 'health') loadHealthDetail();
   if (name === 'wifi') loadWifiPage();
+  if (name === 'hardware') loadHardwarePage();
+  if (name === 'testing') loadTestingPage();
   if (name === 'files') loadFilesPage();
   // mobile
   document.getElementById('overlay').classList.remove('show');
@@ -893,14 +958,14 @@ function updateActivityChart(metrics, range, isPlaceholder) {
   if (range === '24h')       { buckets = 24; bucketMs = 3600000;  labelFn = ts => new Date(ts).getHours() + 'h'; }
   else if (range === '7d')   { buckets = 7;  bucketMs = 86400000; labelFn = ts => new Date(ts).toLocaleDateString([], { weekday: 'short' }); }
   else                       { buckets = 30; bucketMs = 86400000; labelFn = ts => new Date(ts).getDate() + '/' + (new Date(ts).getMonth()+1); }
-  
+
   let pts;
-  if (isPlaceholder) {
-    // Generate realistic placeholder data
+  if (isPlaceholder || !metrics || metrics.length === 0) {
+    // Only use placeholder when explicitly flagged or no data available
     pts = Array.from({ length: buckets }, (_, i) => ({
       label: labelFn(now - (buckets - i) * bucketMs),
-      events: Math.floor(Math.random() * 50) + 10,
-      threats: Math.floor(Math.random() * 5),
+      events: 0,
+      threats: 0,
     }));
   } else {
     pts = Array.from({ length: buckets }, (_, i) => {
@@ -914,7 +979,7 @@ function updateActivityChart(metrics, range, isPlaceholder) {
       };
     });
   }
-  
+
   charts.activity.data.labels = pts.map(p => p.label);
   charts.activity.data.datasets[0].data = pts.map(p => p.events);
   charts.activity.data.datasets[1].data = pts.map(p => p.threats);
@@ -1382,7 +1447,9 @@ async function loadWifiPage() {
     
     // WiFi Networks
     const wifiList = document.getElementById('wifi-list');
-    if (wifi && wifi.length > 0) {
+    if (wifi && wifi.error) {
+      wifiList.innerHTML = `<div class="empty"><div class="empty-text" style="color:var(--amber)">WiFi scan failed: ${escHtml(wifi.error)}</div><div style="font-size:11px;color:var(--text2);margin-top:8px">This may require elevated permissions or platform-specific tools.</div></div>`;
+    } else if (wifi && wifi.length > 0) {
       wifiList.innerHTML = wifi.map(w => `
         <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border)">
           <div>
@@ -1428,6 +1495,159 @@ async function loadWifiPage() {
     }
   } catch(e) {
     document.getElementById('wifi-list').innerHTML = `<div class="empty"><div class="empty-text">Failed to load: ${escHtml(e.message)}</div></div>`;
+  }
+}
+
+// ─── HARDWARE PAGE ───────────────────────────────────────────────────────
+async function loadHardwarePage() {
+  try {
+    const hw = await api('/api/hardware');
+
+    if (hw && hw.error) {
+      document.getElementById('hw-cpu').innerHTML = `<div class="empty"><div class="empty-text" style="color:var(--amber)">Hardware enumeration failed: ${escHtml(hw.error)}</div></div>`;
+      return;
+    }
+
+    // CPU
+    document.getElementById('hw-cpu').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+        <div>
+          <div style="font-weight:600">${escHtml(hw.cpu.model)}</div>
+          <div style="font-size:12px;color:var(--text2)">Architecture: ${escHtml(hw.cpu.architecture)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:700">${hw.cpu.cores} Cores</div>
+          <div style="font-size:12px;color:var(--text2)">${hw.cpu.speed} MHz</div>
+        </div>
+      </div>`;
+
+    // Memory
+    const memPct = ((hw.memory.used / hw.memory.total) * 100).toFixed(1);
+    document.getElementById('hw-memory').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0">
+        <div>
+          <div style="font-weight:600">Total: ${formatBytes(hw.memory.total)}</div>
+          <div style="font-size:12px;color:var(--text2)">Used: ${formatBytes(hw.memory.used)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:700">${memPct}%</div>
+          <div style="font-size:12px;color:var(--text2)">Free: ${formatBytes(hw.memory.free)}</div>
+        </div>
+      </div>
+      <div style="width:100%;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-top:8px">
+        <div style="width:${memPct}%;height:100%;background:${memPct > 80 ? 'var(--red)' : memPct > 60 ? 'var(--amber)' : 'var(--green)'}"></div>
+      </div>`;
+
+    // Storage
+    if (hw.storage && hw.storage.length > 0) {
+      document.getElementById('hw-storage').innerHTML = hw.storage.map(d => {
+        const usedPct = ((d.used / (d.used + d.free)) * 100).toFixed(1);
+        return `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <div style="font-weight:600">${escHtml(d.name)}</div>
+              <div style="font-size:12px;color:var(--text2)">Used: ${formatBytes(d.used)} / Free: ${formatBytes(d.free)}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:14px;font-weight:700">${usedPct}%</div>
+            </div>
+          </div>
+          <div style="width:100%;height:4px;background:var(--bg3);border-radius:2px;overflow:hidden;margin:4px 0 8px 0">
+            <div style="width:${usedPct}%;height:100%;background:${usedPct > 80 ? 'var(--red)' : usedPct > 60 ? 'var(--amber)' : 'var(--green)'}"></div>
+          </div>`;
+      }).join('');
+    } else {
+      document.getElementById('hw-storage').innerHTML = '<div class="empty"><div class="empty-text">No storage information available</div></div>';
+    }
+
+    // Network Adapters
+    if (hw.networkAdapters && hw.networkAdapters.length > 0) {
+      document.getElementById('hw-network').innerHTML = hw.networkAdapters.map(adapter => `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border)">
+          <div style="font-weight:600">${escHtml(adapter.name)}</div>
+          ${adapter.addresses.map(addr => `
+            <div style="font-size:12px;color:var(--text2);margin-top:4px">
+              ${addr.family}: ${escHtml(addr.address)}${addr.internal ? ' (internal)' : ''}
+            </div>
+          `).join('')}
+        </div>
+      `).join('');
+    } else {
+      document.getElementById('hw-network').innerHTML = '<div class="empty"><div class="empty-text">No network adapters detected</div></div>';
+    }
+
+    // USB Devices
+    if (hw.usb && hw.usb.length > 0) {
+      document.getElementById('hw-usb').innerHTML = hw.usb.map(u => `
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:20px">🔌</span>
+          <div>
+            <div style="font-weight:600">${escHtml(u.name)}</div>
+            ${u.id ? `<div style="font-size:12px;color:var(--text2)">ID: ${escHtml(u.id)}</div>` : ''}
+          </div>
+        </div>
+      `).join('');
+    } else {
+      document.getElementById('hw-usb').innerHTML = '<div class="empty"><div class="empty-text">No USB devices detected</div></div>';
+    }
+  } catch(e) {
+    document.getElementById('hw-cpu').innerHTML = `<div class="empty"><div class="empty-text">Failed to load: ${escHtml(e.message)}</div></div>`;
+  }
+}
+
+// ─── TESTING PAGE ───────────────────────────────────────────────────────
+async function loadTestingPage() {
+  // Clear previous results
+  document.getElementById('eicar-result').innerHTML = '';
+  document.getElementById('synthetic-result').innerHTML = '';
+  document.getElementById('anomaly-result').innerHTML = '';
+}
+
+async function runEicarTest() {
+  const resultDiv = document.getElementById('eicar-result');
+  resultDiv.innerHTML = '<div style="color:var(--text2)">Generating EICAR test file...</div>';
+
+  try {
+    const res = await api('/api/test/eicar', { method: 'POST' });
+    if (res.success) {
+      resultDiv.innerHTML = `<div style="color:var(--green)">✓ EICAR test file generated at ${escHtml(res.path)}</div><div style="font-size:12px;color:var(--text2);margin-top:4px">AISS should detect and quarantine this file within the next scan cycle.</div>`;
+    } else {
+      resultDiv.innerHTML = `<div style="color:var(--red)">✗ Failed: ${escHtml(res.error || 'Unknown error')}</div>`;
+    }
+  } catch(e) {
+    resultDiv.innerHTML = `<div style="color:var(--red)">✗ Failed: ${escHtml(e.message)}</div>`;
+  }
+}
+
+async function runSyntheticTest() {
+  const resultDiv = document.getElementById('synthetic-result');
+  resultDiv.innerHTML = '<div style="color:var(--text2)">Generating synthetic threat event...</div>';
+
+  try {
+    const res = await api('/api/test/synthetic', { method: 'POST' });
+    if (res.success) {
+      resultDiv.innerHTML = `<div style="color:var(--green)">✓ Synthetic threat generated (score: ${res.score}, decision: ${res.decision})</div><div style="font-size:12px;color:var(--text2);margin-top:4px">Check the Threats page for details.</div>`;
+    } else {
+      resultDiv.innerHTML = `<div style="color:var(--red)">✗ Failed: ${escHtml(res.error || 'Unknown error')}</div>`;
+    }
+  } catch(e) {
+    resultDiv.innerHTML = `<div style="color:var(--red)">✗ Failed: ${escHtml(e.message)}</div>`;
+  }
+}
+
+async function runAnomalyTest() {
+  const resultDiv = document.getElementById('anomaly-result');
+  resultDiv.innerHTML = '<div style="color:var(--text2)">Simulating baseline anomaly...</div>';
+
+  try {
+    const res = await api('/api/test/anomaly', { method: 'POST' });
+    if (res.success) {
+      resultDiv.innerHTML = `<div style="color:var(--green)">✓ Anomaly simulation triggered (z-score: ${res.zScore.toFixed(2)})</div><div style="font-size:12px;color:var(--text2);margin-top:4px">Check the Alerts page for warnings.</div>`;
+    } else {
+      resultDiv.innerHTML = `<div style="color:var(--red)">✗ Failed: ${escHtml(res.error || 'Unknown error')}</div>`;
+    }
+  } catch(e) {
+    resultDiv.innerHTML = `<div style="color:var(--red)">✗ Failed: ${escHtml(e.message)}</div>`;
   }
 }
 

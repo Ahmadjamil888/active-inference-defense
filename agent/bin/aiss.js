@@ -316,6 +316,74 @@ switch (cmd) {
       console.log(dim("  No logs yet."));
     }
     break;
+  case "help":
+  case "--help":
+  case "-h":
+    banner();
+    console.log("");
+    console.log(`${white("AISS CLI — Complete Command Reference")}`);
+    console.log("");
+    console.log(`${cyan("┌────────────────────────────────────────────────────────────────────────────┐")}`);
+    console.log(`${cyan("│")} ${white("COMMANDS")}${" ".repeat(68)}${cyan("│")}`);
+    console.log(`${cyan("├────────────────────────────────────────────────────────────────────────────┤")}`);
+    console.log(`${cyan("│")} ${white("aiss")} ${dim("or")} ${white("aiss start")} ${" ".repeat(53)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("Start AISS agent and open dashboard at http://127.0.0.1:8179")}${" ".repeat(22)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Generates secure access token")}${" ".repeat(54)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Initializes sensors and security gate")}${" ".repeat(44)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Opens browser automatically")}${" ".repeat(51)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Runs in background after startup")}${" ".repeat(48)}${cyan("│")}`);
+    console.log(`${cyan("│")}${" ".repeat(76)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${white("aiss stop")} ${" ".repeat(65)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("Stop the AISS agent gracefully")}${" ".repeat(55)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Saves all pending data to disk")}${" ".repeat(53)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Closes dashboard connections")}${" ".repeat(51)}${cyan("│")}`);
+    console.log(`${cyan("│")}${" ".repeat(76)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${white("aiss status")} ${" ".repeat(63)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("Check if AISS is running and show details")}${" ".repeat(46)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Shows process ID (PID)")}${" ".repeat(60)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Shows port and dashboard URL")}${" ".repeat(53)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Shows operational status")}${" ".repeat(57)}${cyan("│")}`);
+    console.log(`${cyan("│")}${" ".repeat(76)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${white("aiss logs")} ${" ".repeat(63)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("View recent agent logs (last 60 lines)")}${" ".repeat(47)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Full log file: ~/.aiss/aiss.log")}${" ".repeat(51)}${cyan("│")}`);
+    console.log(`${cyan("│")}${" ".repeat(76)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${white("aiss open")} ${" ".repeat(63)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("Open dashboard in default browser")}${" ".repeat(50)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Dashboard: http://127.0.0.1:8179/")}${" ".repeat(51)}${cyan("│")}`);
+    console.log(`${cyan("│")}${" ".repeat(76)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${white("aiss install")} ${" ".repeat(60)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("Install AISS as Windows Service (auto-start on boot)")}${" ".repeat(36)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Requires administrator privileges")}${" ".repeat(50)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Service name: AISS")}${" ".repeat(61)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Windows only (use systemd/launchd on Linux/macOS)")}${" ".repeat(32)}${cyan("│")}`);
+    console.log(`${cyan("│")}${" ".repeat(76)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${white("aiss uninstall")} ${" ".repeat(58)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("Remove AISS Windows Service")}${" ".repeat(54)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Stops service if running")}${" ".repeat(56)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Unregisters service from system")}${" ".repeat(48)}${cyan("│")}`);
+    console.log(`${cyan("│")}${" ".repeat(76)}${cyan("│")}`);
+    console.log(`${cyan("├────────────────────────────────────────────────────────────────────────────┤")}`);
+    console.log(`${cyan("│")} ${white("OPTIONS")}${" ".repeat(68)}${cyan("│")}`);
+    console.log(`${cyan("├────────────────────────────────────────────────────────────────────────────┤")}`);
+    console.log(`${cyan("│")} ${white("--foreground")} ${" ".repeat(63)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("Run agent in foreground (for debugging)")}${" ".repeat(46)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Logs output to terminal instead of file")}${" ".repeat(47)}${cyan("│")}`);
+    console.log(`${cyan("│")}   ${dim("• Example: aiss start --foreground")}${" ".repeat(50)}${cyan("│")}`);
+    console.log(`${cyan("│")}${" ".repeat(76)}${cyan("│")}`);
+    console.log(`${cyan("├────────────────────────────────────────────────────────────────────────────┤")}`);
+    console.log(`${cyan("│")} ${white("DATA LOCATIONS")}${" ".repeat(62)}${cyan("│")}`);
+    console.log(`${cyan("├────────────────────────────────────────────────────────────────────────────┤")}`);
+    console.log(`${cyan("│")} ${dim("• Database:")}   ${white("~/.aiss/db.json")}${" ".repeat(54)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${dim("• Logs:")}       ${white("~/.aiss/aiss.log")}${" ".repeat(55)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${dim("• Quarantine:")} ${white("~/.aiss/quarantine/")}${" ".repeat(51)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${dim("• Token:")}      ${white("~/.aiss/token")}${" ".repeat(56)}${cyan("│")}`);
+    console.log(`${cyan("│")} ${dim("• PID file:")}   ${white("~/.aiss/aiss.pid")}${" ".repeat(53)}${cyan("│")}`);
+    console.log(`${cyan("└────────────────────────────────────────────────────────────────────────────┘")}`);
+    console.log("");
+    console.log(`${dim("For more information, visit the documentation page.")}`);
+    console.log("");
+    break;
   case "install":
     await installService();
     break;
@@ -335,10 +403,11 @@ switch (cmd) {
     console.log(`  ${cyan("logs")}        ${dim("View recent logs")}`);
     console.log(`  ${cyan("install")}     ${dim("Install as Windows Service")}`);
     console.log(`  ${cyan("uninstall")}   ${dim("Remove Windows Service")}`);
+    console.log(`  ${cyan("help")}        ${dim("Show detailed command reference")}`);
     console.log("");
     console.log(`${white("Options:")}`);
     console.log(`  ${cyan("--foreground")} ${dim("Run in foreground (for debugging)")}`);
     console.log("");
-    console.log(`${dim("Example:")} ${cyan("aiss start")}`);
+    console.log(`${dim("Run 'aiss help' for detailed documentation on each command.")}`);
     console.log("");
 }

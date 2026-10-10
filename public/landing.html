@@ -7,7 +7,7 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-html, body { height:100%; background:#000; overflow:hidden }
+html, body { height:100%; background:#000; }
 body { -webkit-font-smoothing:antialiased; text-rendering:geometricPrecision; margin:0; font-family:'JB',monospace }
 
 :root {
@@ -190,6 +190,144 @@ h1 .ln span { display:block; transform:translateY(120%) }
 
 button:focus-visible, a:focus-visible { outline:2px solid #fff; outline-offset:3px }
 
+.content-section {
+  position: relative;
+  padding: calc(80 * var(--s)) calc(73 * var(--s));
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.section-title {
+  font-family: 'SG', sans-serif;
+  font-weight: 700;
+  font-size: calc(48 * var(--s));
+  color: var(--ink);
+  margin-bottom: calc(40 * var(--s));
+  letter-spacing: calc(-1.5 * var(--s));
+}
+
+.section-subtitle {
+  font-family: 'JB', monospace;
+  font-size: calc(18 * var(--s));
+  color: var(--sub);
+  margin-bottom: calc(60 * var(--s));
+  line-height: calc(26 * var(--s));
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: calc(40 * var(--s));
+}
+
+.feature-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: calc(32 * var(--s));
+  transition: border-color 0.3s;
+}
+
+.feature-card:hover {
+  border-color: var(--red);
+}
+
+.feature-icon {
+  width: calc(48 * var(--s));
+  height: calc(48 * var(--s));
+  margin-bottom: calc(20 * var(--s));
+  color: var(--red);
+}
+
+.feature-title {
+  font-family: 'SG', sans-serif;
+  font-weight: 700;
+  font-size: calc(24 * var(--s));
+  color: var(--ink);
+  margin-bottom: calc(12 * var(--s));
+  letter-spacing: calc(-0.7 * var(--s));
+}
+
+.feature-desc {
+  font-family: 'JB', monospace;
+  font-size: calc(16 * var(--s));
+  color: var(--sub);
+  line-height: calc(24 * var(--s));
+}
+
+.install-block {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  padding: calc(32 * var(--s));
+  margin-bottom: calc(24 * var(--s));
+  border-radius: calc(8 * var(--s));
+}
+
+.install-command {
+  font-family: 'JB', monospace;
+  font-size: calc(16 * var(--s));
+  color: var(--ink);
+  background: rgba(255,255,255,0.05);
+  padding: calc(16 * var(--s));
+  border-radius: calc(4 * var(--s));
+  overflow-x: auto;
+  margin: calc(12 * var(--s)) 0;
+}
+
+.install-label {
+  font-family: 'SG', sans-serif;
+  font-weight: 700;
+  font-size: calc(18 * var(--s));
+  color: var(--sub);
+  margin-bottom: calc(8 * var(--s));
+}
+
+.copy-btn {
+  position: absolute;
+  right: calc(16 * var(--s));
+  top: calc(16 * var(--s));
+  background: var(--red);
+  color: var(--ink);
+  border: none;
+  padding: calc(8 * var(--s)) calc(16 * var(--s));
+  font-family: 'JB', monospace;
+  font-size: calc(14 * var(--s));
+  cursor: pointer;
+  border-radius: calc(4 * var(--s));
+}
+
+.install-block {
+  position: relative;
+}
+
+.docs-nav {
+  display: flex;
+  flex-direction: column;
+  gap: calc(16 * var(--s));
+  max-width: calc(300 * var(--s));
+}
+
+.docs-link {
+  font-family: 'JB', monospace;
+  font-size: calc(16 * var(--s));
+  color: var(--sub);
+  text-decoration: none;
+  padding: calc(12 * var(--s)) 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: color 0.2s;
+}
+
+.docs-link:hover {
+  color: var(--red);
+}
+
+@media (max-width:1023px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  .content-section {
+    padding: calc(60 * var(--s)) calc(40 * var(--s));
+  }
+}
+
 @media (prefers-reduced-motion:reduce) {
   * { transition:none !important; animation:none !important }
   .intro .logo, .intro nav, .intro .burger, .intro .sub, .intro .stat, .intro .btn { opacity:1; transform:none; clip-path:inset(0 0 0 0) }
@@ -230,9 +368,9 @@ button:focus-visible, a:focus-visible { outline:2px solid #fff; outline-offset:3
       </div>
       <nav>
         <a href="#">Home</a>
-        <a href="#">Resources<svg viewBox="0 0 11 6"><path d="M1 1L5.5 5L10 1" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></a>
-        <a href="#">Benefits<svg viewBox="0 0 11 6"><path d="M1 1L5.5 5L10 1" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></a>
-        <a href="#">Contact</a>
+        <a href="#installation">Resources<svg viewBox="0 0 11 6"><path d="M1 1L5.5 5L10 1" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></a>
+        <a href="#features">Benefits<svg viewBox="0 0 11 6"><path d="M1 1L5.5 5L10 1" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></a>
+        <a href="https://github.com/Ahmadjamil888/active-inference-defense" target="_blank">GitHub</a>
       </nav>
       <div class="burger" aria-label="Open menu" role="button" tabindex="0">
         <span></span>
@@ -273,6 +411,78 @@ button:focus-visible, a:focus-visible { outline:2px solid #fff; outline-offset:3
     </section>
     
     <div class="sp sp-c"></div>
+
+    <section class="content-section" id="features">
+      <h2 class="section-title">Local-First Security</h2>
+      <p class="section-subtitle">AISS runs entirely on your machine. No cloud processing, no data leaving your system. Complete control, complete privacy.</p>
+      <div class="features-grid">
+        <div class="feature-card">
+          <svg class="feature-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="8" width="40" height="32" rx="2"/>
+            <path d="M12 20h8M12 28h16"/>
+          </svg>
+          <h3 class="feature-title">Real-Time Monitoring</h3>
+          <p class="feature-desc">Continuous observation of processes, network connections, files, and hardware events with active inference detection.</p>
+        </div>
+        <div class="feature-card">
+          <svg class="feature-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M24 4v40M4 24h40M12 12l24 24M12 36l24-24"/>
+          </svg>
+          <h3 class="feature-title">Security Gate</h3>
+          <p class="feature-desc">Automated decisions on suspicious activity: ALLOW, HOLD, QUARANTINE, or BLOCK based on configurable rules and baselines.</p>
+        </div>
+        <div class="feature-card">
+          <svg class="feature-icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="24" cy="24" r="16"/>
+            <path d="M24 16v8l4 4"/>
+          </svg>
+          <h3 class="feature-title">Incident Response</h3>
+          <p class="feature-desc">Track security events, manage approvals, quarantine suspicious files, and maintain an audit trail of all actions.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="installation">
+      <h2 class="section-title">Installation</h2>
+      <p class="section-subtitle">Install AISS from GitHub. Works on Windows, macOS, and Linux.</p>
+      <div class="install-block">
+        <div class="install-label">Clone the repository</div>
+        <div class="install-command">
+          git clone https://github.com/Ahmadjamil888/active-inference-defense.git
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('git clone https://github.com/Ahmadjamil888/active-inference-defense.git')">Copy</button>
+        </div>
+      </div>
+      <div class="install-block">
+        <div class="install-label">Install the CLI globally</div>
+        <div class="install-command">
+          cd active-inference-defense/agent && npm install -g .
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('cd active-inference-defense/agent && npm install -g .')">Copy</button>
+        </div>
+      </div>
+      <div class="install-block">
+        <div class="install-label">Start AISS</div>
+        <div class="install-command">
+          aiss
+          <button class="copy-btn" onclick="navigator.clipboard.writeText('aiss')">Copy</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-section" id="documentation">
+      <h2 class="section-title">Documentation</h2>
+      <p class="section-subtitle">Comprehensive guides for installation, CLI commands, dashboard usage, and security operations.</p>
+      <div class="docs-nav">
+        <a href="#installation" class="docs-link">Installation Guide</a>
+        <a href="#cli" class="docs-link">CLI Commands</a>
+        <a href="#dashboard" class="docs-link">Dashboard Overview</a>
+        <a href="#sensors" class="docs-link">Sensors & Monitoring</a>
+        <a href="#security" class="docs-link">Security Gate</a>
+        <a href="#incidents" class="docs-link">Incident Management</a>
+        <a href="#quarantine" class="docs-link">Quarantine System</a>
+        <a href="#testing" class="docs-link">Authorized Testing</a>
+        <a href="#troubleshooting" class="docs-link">Troubleshooting</a>
+      </div>
+    </section>
   </div>
   
   <div id="menu">
@@ -283,22 +493,22 @@ button:focus-visible, a:focus-visible { outline:2px solid #fff; outline-offset:3
       <ul class="menu-list">
         <li class="menu-item"><a href="#" class="menu-link">Home</a></li>
         <li class="menu-item">
-          <a href="#" class="menu-link" data-accordion>Resources<svg viewBox="0 0 11 6"><path d="M1 1L5.5 5L10 1" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></a>
+          <a href="#installation" class="menu-link" data-accordion>Resources<svg viewBox="0 0 11 6"><path d="M1 1L5.5 5L10 1" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></a>
           <ul class="menu-sub">
-            <li><a href="#">Documentation</a></li>
-            <li><a href="#">Threat reports</a></li>
-            <li><a href="#">Changelog</a></li>
+            <li><a href="#installation">Installation</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#documentation">Documentation</a></li>
           </ul>
         </li>
         <li class="menu-item">
-          <a href="#" class="menu-link" data-accordion>Benefits<svg viewBox="0 0 11 6"><path d="M1 1L5.5 5L10 1" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></a>
+          <a href="#features" class="menu-link" data-accordion>Benefits<svg viewBox="0 0 11 6"><path d="M1 1L5.5 5L10 1" stroke="currentColor" stroke-width="1.7" fill="none"/></svg></a>
           <ul class="menu-sub">
-            <li><a href="#">Continuous monitoring</a></li>
-            <li><a href="#">Access control</a></li>
-            <li><a href="#">Incident response</a></li>
+            <li><a href="#features">Local-first security</a></li>
+            <li><a href="#features">Real-time monitoring</a></li>
+            <li><a href="#features">Security gate</a></li>
           </ul>
         </li>
-        <li class="menu-item"><a href="#" class="menu-link">Contact</a></li>
+        <li class="menu-item"><a href="https://github.com/Ahmadjamil888/active-inference-defense" class="menu-link">GitHub</a></li>
       </ul>
       <div class="menu-footer">
         <button class="btn-menu">Secure system</button>
@@ -425,7 +635,7 @@ if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     setTimeout(() => {
       document.documentElement.classList.remove('intro');
       anims.forEach(a => a.cancel());
-    }, 4000);
+    }, 6000);
   };
   
   Promise.race([
