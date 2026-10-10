@@ -42,6 +42,7 @@ let knownVolumes = new Set();
 let listeners = [];
 let running = false;
 let ticks = 0;
+let startedAt = null;
 let healthChecks = {
   sensors: { status: "ok", lastCheck: null, errorCount: 0 },
   scanner: { status: "ok", lastCheck: null, errorCount: 0 },
@@ -336,6 +337,7 @@ export function state() {
     host: S.host(),
     belief,
     running,
+    started: startedAt || (d.settings.startedAt ? new Date(d.settings.startedAt).getTime() : Date.now()),
     counts: { threats: d.threats.length, scans: d.scans.length, events: d.events.length },
     metrics: d.metrics.slice(-120),
     threats: d.threats.slice(-100).reverse(),
@@ -351,6 +353,7 @@ export function state() {
 export function start() {
   if (running) return;
   running = true;
+  startedAt = Date.now();
   setSetting("startedAt", new Date().toISOString());
   log("info", "engine", "Active-inference engine online", null);
   const loop = async () => {
