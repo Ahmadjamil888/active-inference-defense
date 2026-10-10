@@ -5,7 +5,14 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
-const run = promisify(execFile);
+const run = (cmd, args, options = {}) => {
+  const opts = {
+    ...options,
+    windowsHide: true,
+    shell: false
+  };
+  return promisify(execFile)(cmd, args, opts);
+};
 const isWin = process.platform === "win32";
 const isMac = process.platform === "darwin";
 

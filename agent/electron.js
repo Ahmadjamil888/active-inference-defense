@@ -73,7 +73,9 @@ function startAgent() {
   const agentPath = path.join(__dirname, 'bin', 'aiss.js');
   agentProcess = spawn('node', [agentPath, '__daemon'], {
     detached: false,
-    stdio: ['ignore', 'pipe', 'pipe']
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+    shell: false
   });
 
   agentProcess.stdout.on('data', (data) => {

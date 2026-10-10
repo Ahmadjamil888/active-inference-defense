@@ -188,6 +188,7 @@ async function start(foreground) {
         detached: true,
         stdio: ["ignore", out, out],
         windowsHide: true,
+        shell: false,
       }).unref();
       for (let i = 0; i < 40; i++) {
         await sleep(150);
