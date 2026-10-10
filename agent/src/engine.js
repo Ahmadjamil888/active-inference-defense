@@ -203,6 +203,11 @@ export async function advanceIncident(incidentId, stage) {
 
 async function tick() {
   ticks++;
+  const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+  
+  // Log agent activity
+  log("info", "agent", `[${timestamp}] Sensor Agent: Collecting system metrics (CPU, memory, processes, connections)`, { agent: "sensor", action: "collect_metrics" });
+  
   const cpu = S.cpuUsage();
   const mem = S.memory();
   const [procs, conns, vols, dsk] = await Promise.all([S.processes(), S.connections(), S.volumes(), S.disks()]);
@@ -224,12 +229,16 @@ async function tick() {
   learn("procs", metric.procs);
   learn("conns", metric.conns);
 
+  log("info", "agent", `[${timestamp}] Inference Agent: Analyzing ${procs.length} processes and ${conns.length} connections for anomalies`, { agent: "inference", action: "analyze_anomalies", processes: procs.length, connections: conns.length });
+
   if (ticks > 6 && sCpu.z > 4) {
     const top = procs[0];
     log("warn", "inference", `Surprising CPU load ${metric.cpu}% (z=${sCpu.z.toFixed(1)}), top process ${top?.name ?? "?"}`, null);
+    log("info", "agent", `[${timestamp}] Anomaly Agent: Flagged high CPU anomaly (z=${sCpu.z.toFixed(1)}) from process ${top?.name}`, { agent: "anomaly", action: "flagged", severity: "high", process: top?.name });
   }
   if (ticks > 6 && sConn.z > 4) {
     log("warn", "inference", `Unusual number of network connections (${metric.conns}, z=${sConn.z.toFixed(1)})`, null);
+    log("info", "agent", `[${timestamp}] Network Agent: Flagged connection anomaly (z=${sConn.z.toFixed(1)}) with ${metric.conns} connections`, { agent: "network", action: "flagged", severity: "high", connections: metric.conns });
   }
 
   // Removable media: scan newly appeared volumes for real.
@@ -238,12 +247,14 @@ async function tick() {
     knownVolumes.add(v.mount);
     if (ticks < 2) continue;
     log("info", "sensor", `Removable volume mounted: ${v.mount}`, null);
+    log("info", "agent", `[${timestamp}] USB Agent: Detected new removable volume at ${v.mount}, initiating security scan`, { agent: "usb", action: "detected_volume", volume: v.mount });
     await runScan(v.mount, 3000, "usb");
   }
   for (const m of [...knownVolumes]) if (!vols.some((v) => v.mount === m)) knownVolumes.delete(m);
 
   // Periodic enhanced data collection (every 60 ticks ~ 4 minutes)
   if (ticks % 60 === 0) {
+    log("info", "agent", `[${timestamp}] Recon Agent: Starting comprehensive system reconnaissance`, { agent: "recon", action: "full_scan" });
     try {
       const [wifi, devices, files, sysLogs] = await Promise.all([
         S.wifiNetworks(),
@@ -257,11 +268,13 @@ async function tick() {
         const connected = wifi.filter(w => w.connected);
         if (connected.length > 0) {
           log("info", "network", `Connected to WiFi: ${connected[0].ssid}`, null);
+          log("info", "agent", `[${timestamp}] WiFi Agent: Monitoring connection to ${connected[0].ssid}`, { agent: "wifi", action: "monitoring", ssid: connected[0].ssid });
         }
       }
       
       if (devices.length > 0) {
         log("info", "network", `Detected ${devices.length} network devices on LAN`, null);
+        log("info", "agent", `[${timestamp}] Network Agent: Enumerated ${devices.length} devices on local network`, { agent: "network", action: "enumerated", count: devices.length });
       }
       
       // Log suspicious file activity
@@ -269,12 +282,14 @@ async function tick() {
       const suspiciousFiles = files.filter(f => suspiciousExts.includes(f.extension));
       if (suspiciousFiles.length > 0) {
         log("warn", "file", `Detected ${suspiciousFiles.length} suspicious executables in recent files`, null);
+        log("info", "agent", `[${timestamp}] File Agent: Analyzed ${files.length} recent files, flagged ${suspiciousFiles.length} suspicious executables`, { agent: "file", action: "analyzed", total: files.length, suspicious: suspiciousFiles.length });
       }
       
       // Log system errors
       const errorLogs = sysLogs.filter(l => l.level === 'error');
       if (errorLogs.length > 0) {
         log("warn", "system", `${errorLogs.length} system errors in recent logs`, null);
+        log("info", "agent", `[${timestamp}] System Agent: Detected ${errorLogs.length} system errors in recent logs`, { agent: "system", action: "detected_errors", count: errorLogs.length });
       }
     } catch (e) {
       log("error", "sensor", `Enhanced data collection failed: ${e.message}`, null);
@@ -283,6 +298,7 @@ async function tick() {
 
   // Periodic health checks (every 30 ticks ~ 2 minutes)
   if (ticks % 30 === 0) {
+    log("info", "agent", `[${timestamp}] Health Agent: Running diagnostic checks on all services`, { agent: "health", action: "diagnostic" });
     await performHealthCheck("sensors");
     await performHealthCheck("scanner");
     await performHealthCheck("database");
