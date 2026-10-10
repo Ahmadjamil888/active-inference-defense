@@ -137,6 +137,7 @@ async function daemon() {
   fs.writeFileSync(PID, String(process.pid));
   serve(PORT, token());
   E.start();
+  process.title = "AISS - Agentic AI Security System";
   const bye = () => {
     save();
     try { fs.unlinkSync(PID); } catch {}

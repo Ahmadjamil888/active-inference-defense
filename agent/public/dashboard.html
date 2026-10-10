@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>AISS — Local Dashboard</title>
+<title>AISS - Agentic AI Security System</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
 <style>
 :root {
@@ -1887,6 +1887,7 @@ function connectSSE() {
 
 // ─── INITIAL LOAD ─────────────────────────────────────────────────────────────
 async function init() {
+  window.title = 'AISS - Agentic AI Security System';
   loadSavedSettings();
   initCharts();
   try {
@@ -1894,7 +1895,7 @@ async function init() {
     updateOverview(state);
     // pre-fill health log with existing events
     (state.events || []).slice().reverse().forEach(appendLog);
-    
+
   } catch(e) {
     document.getElementById('page-overview').innerHTML =
       `<div class="empty"><div class="empty-icon">⚠</div><div class="empty-text">Cannot connect to AISS engine.<br><small style="color:var(--text2)">${escHtml(e.message)}</small></div></div>`;
