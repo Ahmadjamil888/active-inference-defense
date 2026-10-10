@@ -12,6 +12,7 @@ const TOKEN_FILE = path.join(HOME, "token");
 const LOG = path.join(HOME, "aiss.log");
 const BROWSER_LOCK = path.join(HOME, "browser.lock");
 const cmd = process.argv[2] || "start";
+const isWin = process.platform === "win32";
 
 const c = (n) => (s) => `\x1b[${n}m${s}\x1b[0m`;
 const cyan = c(36), green = c(32), dim = c(2), red = c(31), bold = c(1), yellow = c(33), blue = c(34), magenta = c(35), white = c(97);
@@ -184,12 +185,16 @@ async function start(foreground) {
     await step("Starting background engine", async () => {
       const out = fs.openSync(LOG, "a");
       const scriptPath = fileURLToPath(import.meta.url);
-      spawn(process.execPath, [scriptPath, "__daemon"], {
+      const spawnOpts = {
         detached: true,
         stdio: ["ignore", out, out],
         windowsHide: true,
         shell: false,
-      }).unref();
+      };
+      if (isWin) {
+        spawnOpts.windowsVerbatimArguments = true;
+      }
+      spawn(process.execPath, [scriptPath, "__daemon"], spawnOpts).unref();
       for (let i = 0; i < 40; i++) {
         await sleep(150);
         if (runningPid()) return;

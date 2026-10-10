@@ -6,12 +6,16 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 const run = (cmd, args, options = {}) => {
+  let actualArgs = args;
+  if (isWin && cmd === 'powershell') {
+    actualArgs = ['-WindowStyle', 'Hidden', '-NoProfile', ...args];
+  }
   const opts = {
     ...options,
     windowsHide: true,
     shell: false
   };
-  return promisify(execFile)(cmd, args, opts);
+  return promisify(execFile)(cmd, actualArgs, opts);
 };
 const isWin = process.platform === "win32";
 const isMac = process.platform === "darwin";
