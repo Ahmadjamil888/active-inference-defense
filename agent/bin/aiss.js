@@ -68,9 +68,22 @@ function openBrowser(url) {
   } catch {}
 
   const p = process.platform;
-  const args = p === "win32" ? ["cmd", ["/c", "start", "", url]] : p === "darwin" ? ["open", [url]] : ["xdg-open", [url]];
+  let args;
+  if (p === "win32") {
+    args = ["cmd", ["/c", "start", "/b", url]];
+  } else if (p === "darwin") {
+    args = ["open", [url]];
+  } else {
+    args = ["xdg-open", [url]];
+  }
   try {
-    spawn(args[0], args[1], { detached: true, stdio: "ignore" }).unref();
+    const child = spawn(args[0], args[1], { 
+      detached: true, 
+      stdio: ["ignore", "ignore", "ignore"],
+      windowsHide: true,
+      shell: false
+    });
+    child.unref();
     fs.writeFileSync(BROWSER_LOCK, String(Date.now()));
   } catch {
     /* no browser */
