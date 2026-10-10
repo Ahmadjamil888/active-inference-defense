@@ -190,10 +190,8 @@ async function start(foreground) {
         stdio: ["ignore", out, out],
         windowsHide: true,
         shell: false,
+        cwd: path.dirname(scriptPath),
       };
-      if (isWin) {
-        spawnOpts.windowsVerbatimArguments = true;
-      }
       spawn(process.execPath, [scriptPath, "__daemon"], spawnOpts).unref();
       for (let i = 0; i < 40; i++) {
         await sleep(150);
